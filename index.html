@@ -14,6 +14,7 @@
             --neon-cyan: #00f3ff;
             --neon-purple: #bc13fe;
             --neon-green: #0aff68;
+            --neon-orange: #ffaa00; /* New Game Color */
             --text-main: #eeeeee;
             --text-dim: #666666;
             --font-mono: 'Courier New', Courier, monospace; 
@@ -132,7 +133,17 @@
                 <h1 class="text-4xl font-bold tracking-widest text-glow-cyan">VIBE // HUB</h1>
                 <p class="text-xs text-gray-500 mt-1 font-mono tracking-wider">Games on Github</p>
             </div>
-            <div class="flex gap-4">
+            <div class="flex gap-4 items-center">
+                <!-- NEW GAME TAB - Opens Overlay -->
+                <button onclick="openGame('webgl')"
+                   class="text-xs text-gray-400 hover:text-orange-400 transition font-mono whitespace-nowrap uppercase cursor-pointer bg-transparent border-none"
+                   onmouseenter="this.innerText='[ NO DOWNLOAD!! ]'" 
+                   onmouseleave="this.innerText='[ GAME NOW! ]'">
+                   [ GAME NOW! ]
+                </button>
+                
+                <span class="text-gray-700">|</span>
+
                 <a href="https://github.com/RlabsLLC/Games" target="_blank" class="text-xs text-gray-400 hover:text-cyan-400 transition font-mono">[ GITHUB ]</a>
             </div>
         </header>
@@ -140,8 +151,32 @@
         <!-- MAIN GRID -->
         <main class="flex-1 w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
             
-            <!-- CARD 1: SYSTEM GUIDE -->
-            <!-- Note: Positioned first now as it is the primary focus -->
+            <!-- HERO HEADER -->
+            <div class="col-span-1 md:col-span-2 lg:col-span-3 text-center py-8 mb-4">
+                <h2 class="text-5xl md:text-7xl font-black text-white tracking-tight leading-tight uppercase" style="text-shadow: 0 0 30px rgba(255,255,255,0.1);">
+                    No B.S. <br class="md:hidden" /> <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-500">Just Games</span>
+                </h2>
+                <!-- RANDOM SUBHEADER -->
+                <p id="random-quote" class="mt-4 text-cyan-400 font-mono text-sm md:text-base tracking-widest opacity-80 min-h-[1.5em] animate-pulse">
+                    <!-- Javascript will inject text here -->
+                </p>
+            </div>
+
+            <!-- CARD 1: WEB GAMES CATEGORY -->
+            <div class="glass-panel p-8 rounded-xl flex flex-col justify-between hover:translate-y-[-5px] transition duration-300 border-l-4 border-l-orange-500 group">
+                <div>
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-2xl font-bold text-white group-hover:text-orange-400 transition">Web Games</h2>
+                        <span class="text-xs border border-orange-500/30 text-orange-500 px-2 py-1 rounded">BROWSER</span>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">
+                        Instant play. No downloads required. Access the library of WebGL and HTML5 experiences.
+                    </p>
+                </div>
+                <button onclick="openGame('webgl')" class="btn-vibe w-full py-3 rounded text-sm font-bold" style="border-color: var(--neon-orange); color: var(--neon-orange)">OPEN CONSOLE</button>
+            </div>
+
+            <!-- CARD 2: SYSTEM GUIDE -->
             <div class="glass-panel p-8 rounded-xl flex flex-col justify-between hover:translate-y-[-5px] transition duration-300 border-l-4 border-l-green-500 group">
                 <div>
                     <div class="flex justify-between items-start mb-4">
@@ -155,8 +190,6 @@
                 <button onclick="openGame('guide')" class="btn-vibe w-full py-3 rounded text-sm font-bold" style="border-color: var(--neon-green); color: var(--neon-green)">Access Data</button>
             </div>
 
-            <!-- Future links can be added here as new Cards -->
-
         </main>
 
         <!-- FOOTER -->
@@ -169,8 +202,34 @@
     
     <!-- OVERLAY CONTAINER -->
     <div id="game-overlay">
-        <button onclick="closeGame()" class="absolute top-8 right-8 text-white hover:text-red-500 text-xl font-mono">[ CLOSE TERMINAL ]</button>
+        <button onclick="closeGame()" class="absolute top-8 right-8 text-white hover:text-red-500 text-xl font-mono z-50">[ CLOSE TERMINAL ]</button>
         
+        <!-- WEB GAMES OVERLAY -->
+        <div id="game-webgl" class="game-content hidden flex-col items-center w-full max-w-5xl h-[80vh] glass-panel p-10 rounded-xl overflow-y-auto">
+            <h2 class="text-3xl font-mono text-orange-400 mb-2 tracking-widest w-full text-center">GAME_CONSOLE // WEBGL</h2>
+            <p class="text-xs text-gray-500 font-mono mb-8">STATUS: ONLINE // NO_DOWNLOAD_REQUIRED</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                <!-- ECHOHILL RACER CARD -->
+                <div class="border border-white/10 bg-black/40 p-6 rounded-lg hover:border-orange-500 transition duration-300">
+                    <h3 class="text-xl font-bold text-white mb-2">EchoHill Racer 3D</h3>
+                    <div class="h-1 w-12 bg-orange-500 mb-4"></div>
+                    <p class="text-gray-400 text-sm mb-6">
+                        High-fidelity 3D drifting physics running directly in your browser. Experience the hills without the install.
+                    </p>
+                    <a href="https://rlabsllc.github.io/games/hillrider" target="_blank" class="inline-block w-full py-3 text-center bg-orange-500 text-black font-bold hover:bg-orange-400 transition rounded">
+                        Open Game
+                    </a>
+                </div>
+
+                <!-- PLACEHOLDER FOR FUTURE GAMES -->
+                <div class="border border-white/5 bg-black/20 p-6 rounded-lg opacity-50 flex flex-col justify-center items-center text-center">
+                    <h3 class="text-xl font-bold text-gray-600 mb-2">Slot Empty</h3>
+                    <p class="text-gray-700 text-sm">Waiting for new deployment...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- SYSTEM GUIDE OVERLAY -->
         <div id="game-guide" class="game-content hidden flex-col items-start w-full max-w-3xl glass-panel p-10 rounded-xl overflow-y-auto max-h-[80vh]">
             <h2 class="text-3xl font-mono text-green-400 mb-8 tracking-widest border-b border-gray-700 w-full pb-4">GAME_RETRIEVAL</h2>
@@ -239,6 +298,24 @@
 
     <!-- LOGIC SCRIPTS -->
     <script>
+        // --- RANDOM QUOTE GENERATOR ---
+        const quotes = [
+            "Even I'm angry at all the unskippable ads!",
+            "Cuz someone hasn't decided to be this kind",
+            "It can be done...",
+            "0% Ads. 100% Vibes.",
+            "Your wifi is safe here.",
+            "Clicking 'Skip Ad' is not a game mechanic.",
+            "Pure HTML. No preservatives.",
+            "Because waiting 30 seconds is boring.",
+            "Warning: May contain actual gameplay.",
+            "More frames, less popups."
+        ];
+        
+        const quoteEl = document.getElementById('random-quote');
+        quoteEl.innerText = "> " + quotes[Math.floor(Math.random() * quotes.length)];
+
+
         // --- BACKGROUND CANVAS LOGIC ---
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
