@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V I B E // H U B</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* --- WebV2.7o1.5 DESIGN SYSTEM --- */
+        :root {
+            --bg-deep: #030303;
+            --bg-panel: rgba(20, 20, 20, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --neon-cyan: #00f3ff;
+            --neon-purple: #bc13fe;
+            --neon-green: #0aff68;
+            --text-main: #eeeeee;
+            --text-dim: #666666;
+            --font-mono: 'Courier New', Courier, monospace; 
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden; /* Prevent horizontal scroll, allow vertical */
+            min-height: 100vh;
+        }
+
+        /* Scanline Overlay for Retro Vibe */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.3;
+        }
+
+        /* --- UTILITIES --- */
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .text-glow-cyan { text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+        .text-glow-purple { text-shadow: 0 0 10px rgba(188, 19, 254, 0.5); }
+        
+        .btn-vibe {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: var(--font-mono);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-vibe:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        .btn-vibe:active {
+            transform: scale(0.98);
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating { animation: float 6s ease-in-out infinite; }
+
+        /* --- LAYOUT --- */
+        #app-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- GAME OVERLAY --- */
+        #game-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #game-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+    </style>
+</head>
+<body class="selection:bg-cyan-500 selection:text-black">
+
+    <!-- CANVAS BACKGROUND -->
+    <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full z-0 opacity-40"></canvas>
+    <div class="scanlines"></div>
+
+    <div id="app-container" class="p-6">
+        
+        <!-- HEADER -->
+        <header class="w-full max-w-6xl mx-auto flex justify-between items-center mb-12 border-b border-white/10 pb-6">
+            <div>
+                <h1 class="text-4xl font-bold tracking-widest text-glow-cyan">VIBE // HUB</h1>
+                <p class="text-xs text-gray-500 mt-1 font-mono tracking-wider">Games on Github</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="https://github.com/RlabsLLC/Games" target="_blank" class="text-xs text-gray-400 hover:text-cyan-400 transition font-mono">[ GITHUB ]</a>
+            </div>
+        </header>
+
+        <!-- MAIN GRID -->
+        <main class="flex-1 w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+            
+            <!-- CARD 1: SYSTEM GUIDE -->
+            <!-- Note: Positioned first now as it is the primary focus -->
+            <div class="glass-panel p-8 rounded-xl flex flex-col justify-between hover:translate-y-[-5px] transition duration-300 border-l-4 border-l-green-500 group">
+                <div>
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-2xl font-bold text-white group-hover:text-green-400 transition">System Guide</h2>
+                        <span class="text-xs border border-green-500/30 text-green-500 px-2 py-1 rounded">INFO</span>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">
+                        Access the game archives on the GitHub repository. View instructions for downloading and running .html game files.
+                    </p>
+                </div>
+                <button onclick="openGame('guide')" class="btn-vibe w-full py-3 rounded text-sm font-bold" style="border-color: var(--neon-green); color: var(--neon-green)">Access Data</button>
+            </div>
+
+            <!-- Future links can be added here as new Cards -->
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="text-center text-gray-600 text-xs py-6 font-mono">
+            WebV2.7o1.5 DESIGN LANGUAGE // END OF LINE
+        </footer>
+    </div>
+
+    <!-- === GAME OVERLAYS === -->
+    
+    <!-- OVERLAY CONTAINER -->
+    <div id="game-overlay">
+        <button onclick="closeGame()" class="absolute top-8 right-8 text-white hover:text-red-500 text-xl font-mono">[ CLOSE TERMINAL ]</button>
+        
+        <!-- SYSTEM GUIDE OVERLAY -->
+        <div id="game-guide" class="game-content hidden flex-col items-start w-full max-w-3xl glass-panel p-10 rounded-xl overflow-y-auto max-h-[80vh]">
+            <h2 class="text-3xl font-mono text-green-400 mb-8 tracking-widest border-b border-gray-700 w-full pb-4">GAME_RETRIEVAL</h2>
+            
+            <div class="space-y-8 w-full">
+                
+                <!-- Step 0: GitHub Retrieval -->
+                <div>
+                    <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-cyan-500 rounded-full"></span> 
+                        STEP 0: RETRIEVE FILES
+                    </h3>
+                    <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
+                        <p>1. Click the <span class="text-cyan-400">[ GITHUB ]</span> link at the top of this page.</p>
+                        <p>2. Browse the repository list to find a game file (e.g., <span class="text-gray-500">game_name.html</span>).</p>
+                        <p>3. Click the file name to open its preview.</p>
+                        <p>4. Locate the "Download" or "Raw" button (top right of file view) to save it.</p>
+                    </div>
+                </div>
+
+                <div class="w-full h-px bg-gray-800"></div>
+
+                <!-- Windows/Linux/Mac -->
+                <div>
+                    <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> 
+                        Windows / Linux / Mac
+                    </h3>
+                    <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
+                        <p>1. Ensure the <span class="text-green-400">.html</span> file is saved to your drive.</p>
+                        <p>2. Right-click the file.</p>
+                        <p>3. Select "Open With" -> Google Chrome, Firefox, or Edge.</p>
+                        <p class="text-xs text-gray-500 pt-2">* No installation or internet connection required to play.</p>
+                    </div>
+                </div>
+
+                <!-- Chromebook -->
+                <div>
+                    <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> 
+                        Chromebook / ChromeOS
+                    </h3>
+                    <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
+                        <p>1. Save the file to your "Downloads" folder.</p>
+                        <p>2. Open the "Files" app.</p>
+                        <p>3. Double-click the file to launch it directly in the browser.</p>
+                    </div>
+                </div>
+
+                <!-- Mobile -->
+                <div>
+                    <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> 
+                        Mobile Devices
+                    </h3>
+                    <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
+                        <p>1. Download the file to your device storage.</p>
+                        <p>2. Use a File Manager app to locate the file.</p>
+                        <p>3. Tap to open. Select your preferred browser if prompted.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LOGIC SCRIPTS -->
+    <script>
+        // --- BACKGROUND CANVAS LOGIC ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let canvasWidth, canvasHeight, particles = [];
+        const mouse = { x: null, y: null };
+
+        function resize() {
+            canvasWidth = canvas.width = window.innerWidth;
+            canvasHeight = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+        window.addEventListener('mousemove', e => { mouse.x = e.x; mouse.y = e.y });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvasWidth;
+                this.y = Math.random() * canvasHeight;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if(this.x < 0 || this.x > canvasWidth) this.vx *= -1;
+                if(this.y < 0 || this.y > canvasHeight) this.vy *= -1;
+                
+                // Mouse repulsion
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if(dist < 150) {
+                    this.x -= dx/dist * 2;
+                    this.y -= dy/dist * 2;
+                }
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        for(let i=0; i<80; i++) particles.push(new Particle());
+
+        function animateBg() {
+            ctx.clearRect(0,0,canvasWidth,canvasHeight);
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw();
+                // Draw lines
+                for(let j=i; j<particles.length; j++){
+                    const dx = p.x - particles[j].x;
+                    const dy = p.y - particles[j].y;
+                    const d = Math.sqrt(dx*dx + dy*dy);
+                    if(d < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(0, 243, 255, ${0.15 - d/100 * 0.15})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+
+        // --- UI INTERACTION LOGIC ---
+
+        const overlay = document.getElementById('game-overlay');
+        const contents = document.querySelectorAll('.game-content');
+        
+        function openGame(id) {
+            overlay.classList.add('active');
+            contents.forEach(c => c.classList.add('hidden'));
+            contents.forEach(c => c.classList.remove('flex'));
+            
+            const target = document.getElementById('game-' + id);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('flex');
+            }
+        }
+
+        function closeGame() {
+            overlay.classList.remove('active');
+        }
+
+    </script>
+</body>
+</html>
