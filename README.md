@@ -1,4 +1,4 @@
-![Vibe Hub Banner](banner.png)
+![Vibe Hub Banner](banner_img.png)
 
 # V I B E // H U B v1
 
