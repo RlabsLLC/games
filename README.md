@@ -1,9 +1,9 @@
-![Vibe Hub Banner](banner_img.png)
+[![Go to Website](banner_img.png)]
 
 # V I B E // H U B v1
 
 Ad Free Games Here!
-
+[Go to Website](https://rlabsllc.github.io/games/)
 Avaiable Games:
 
 * EcoHill Racer 3D v1
