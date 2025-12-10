@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EcoHill Racer 3D - FPS Edition</title>
+    <title>EcoHill Racer 3D - v1.5.2</title>
     <style>
         body {
             margin: 0;
@@ -32,10 +32,15 @@
             pointer-events: none;
             color: white;
             text-shadow: 2px 2px 0 #000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .stat-box {
-            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .label {
@@ -43,6 +48,7 @@
             font-weight: bold;
             text-transform: uppercase;
             opacity: 0.9;
+            width: 80px;
         }
 
         .value {
@@ -51,13 +57,12 @@
         }
 
         #fuel-container {
-            width: 200px;
-            height: 20px;
+            width: 150px;
+            height: 15px;
             background: rgba(0, 0, 0, 0.5);
             border: 2px solid white;
             border-radius: 10px;
             overflow: hidden;
-            margin-top: 5px;
         }
 
         #fuel-bar {
@@ -66,6 +71,15 @@
             background: linear-gradient(90deg, #ff4d4d, #f9cb28, #4cd137);
             transform-origin: left;
             transition: width 0.1s linear;
+        }
+
+        /* Powerup Indicators */
+        .active-buff {
+            display: none;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 5px currentColor;
+            animation: pulse 1s infinite;
         }
 
         #controls-hint {
@@ -77,18 +91,39 @@
             font-size: 18px;
             text-shadow: 1px 1px 2px black;
             pointer-events: none;
-            animation: pulse 2s infinite;
             z-index: 10;
         }
 
+        /* Top Right Buttons */
+        #hud-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 15;
+            display: flex;
+            gap: 10px;
+        }
+
+        .hud-btn {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid white;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            pointer-events: auto;
+        }
+        .hud-btn:hover { background: rgba(255,255,255,0.2); }
+
         /* Menus */
         .overlay-menu {
-            display: none; /* Hidden by default */
+            display: none;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             color: white;
             padding: 30px;
             border-radius: 15px;
@@ -97,7 +132,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             z-index: 20;
             min-width: 350px;
-            max-height: 80vh;
+            max-height: 85vh;
             overflow-y: auto;
         }
 
@@ -132,7 +167,7 @@
             font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
-            min-width: 60px;
+            min-width: 70px;
         }
         .shop-btn:disabled {
             background: #555;
@@ -158,27 +193,50 @@
         .diff-select {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 20px;
         }
         .diff-btn {
-            padding: 10px 20px;
+            padding: 8px 15px;
             border: 2px solid #555;
             background: #222;
             color: #888;
             cursor: pointer;
             border-radius: 5px;
             font-weight: bold;
+            font-size: 12px;
         }
         .diff-btn.selected {
             border-color: #f9cb28;
             background: #444;
             color: white;
         }
+        .diff-btn.impossible {
+            border-color: #ff0000;
+            color: #ff6666;
+        }
+        .diff-btn.impossible.selected {
+            background: #660000;
+            color: white;
+            box-shadow: 0 0 10px #ff0000;
+        }
 
         .coin-icon {
             color: #ffd700;
             font-weight: bold;
+        }
+
+        #perf-warning {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            color: orange;
+            font-size: 12px;
+            font-weight: bold;
+            display: none;
+            z-index: 5;
+            text-shadow: 1px 1px 0 #000;
         }
 
         @keyframes pulse {
@@ -220,6 +278,24 @@
                 <div id="fuel-bar"></div>
             </div>
         </div>
+        
+        <!-- Powerup Status -->
+        <div class="stat-box active-buff" id="buff-shield" style="color:#00ffff">
+            <div class="label" style="width:auto">🛡️ SHIELD</div>
+            <div class="value"><span id="time-shield">0</span>s</div>
+        </div>
+        <div class="stat-box active-buff" id="buff-magnet" style="color:#bf55ec">
+            <div class="label" style="width:auto">🧲 MAGNET</div>
+            <div class="value"><span id="time-magnet">0</span>s</div>
+        </div>
+        <div class="stat-box active-buff" id="buff-fuel" style="color:#2ecc71">
+            <div class="label" style="width:auto">⛽ REGEN</div>
+            <div class="value"><span id="time-fuel">0</span>s</div>
+        </div>
+    </div>
+
+    <div id="hud-buttons">
+        <button class="hud-btn" onclick="endGame('Retired')">SHOP</button>
     </div>
 
     <div id="controls-hint">
@@ -228,6 +304,8 @@
             [↑/W] Gas &bull; [←/→] Steer &bull; [↓] Brake
         </div>
     </div>
+
+    <div id="perf-warning">⚠️ AI: Performance Mode Active</div>
 
     <!-- Shop / Start Menu -->
     <div id="shop-menu" class="overlay-menu" style="display: block;">
@@ -238,7 +316,11 @@
             <button class="diff-btn selected" id="diff-easy" onclick="setDifficulty('easy')">EASY ($5)</button>
             <button class="diff-btn" id="diff-medium" onclick="setDifficulty('medium')">MED ($7)</button>
             <button class="diff-btn" id="diff-hard" onclick="setDifficulty('hard')">HARD ($10)</button>
+            <button class="diff-btn impossible" id="diff-impossible" onclick="setDifficulty('impossible')">IMPOSSIBLE ($15)</button>
         </div>
+
+        <!-- NEW BUTTON ADDED HERE -->
+        <button class="main-btn" style="background:#f9cb28; color:black; font-size:16px; padding:10px 20px; margin-bottom:15px; width:100%;" onclick="upgradeAll()">⚡ UPGRADE ALL STATS ⚡</button>
 
         <div class="shop-grid">
             <div class="shop-item">
@@ -280,8 +362,8 @@
             </div>
             <div class="shop-item">
                 <div>
-                    <div><strong>Coin Magnet</strong></div>
-                    <div style="font-size:0.8em; color:#aaa;">2.5x Collection Range</div>
+                    <div><strong>Passive Magnet</strong></div>
+                    <div style="font-size:0.8em; color:#aaa;">Permanent Small Magnet</div>
                 </div>
                 <button class="shop-btn" id="btn-magnet" onclick="buyUpgrade('magnet')">1500</button>
             </div>
@@ -291,6 +373,13 @@
                     <div style="font-size:0.8em; color:#aaa;">Unlock Jump (Spacebar)</div>
                 </div>
                 <button class="shop-btn" id="btn-jump" onclick="buyUpgrade('jump')">2000</button>
+            </div>
+            <div class="shop-item">
+                <div>
+                    <div><strong>Fuel Regen</strong></div>
+                    <div style="font-size:0.8em; color:#aaa;">Passive Fuel Regen (30s)</div>
+                </div>
+                <button class="shop-btn" id="btn-regen" onclick="buyUpgrade('regen')">5000</button>
             </div>
         </div>
 
@@ -314,17 +403,19 @@
 const DIFFICULTY = {
     easy: { coinValue: 5, obsRate: 0.15, trafficRate: 0.05 },
     medium: { coinValue: 7, obsRate: 0.3, trafficRate: 0.15 },
-    hard: { coinValue: 10, obsRate: 0.5, trafficRate: 0.3 }
+    hard: { coinValue: 10, obsRate: 0.5, trafficRate: 0.3 },
+    impossible: { coinValue: 15, obsRate: 0.8, trafficRate: 0.6 }
 };
 
 let currentDiff = 'easy';
+let perfMode = false;
 
 /**
  * Persistence
  */
 const DEFAULT_SAVE = {
     coins: 0,
-    upgrades: { fuel: 1, handling: 1, speed: 1, aero: 1, hasJump: false, hasTires: false, hasMagnet: false }
+    upgrades: { fuel: 1, handling: 1, speed: 1, aero: 1, hasJump: false, hasTires: false, hasMagnet: false, hasRegen: false }
 };
 let saveData = JSON.parse(localStorage.getItem('ecoHillSave')) || JSON.parse(JSON.stringify(DEFAULT_SAVE));
 if (!saveData.upgrades.speed) saveData.upgrades.speed = 1;
@@ -348,7 +439,6 @@ const CONFIG = {
     baseMaxFuel: 120, 
     renderDistance: 800,  
     baseMaxSpeedKmh: 40,  
-    maxSpeedKmhCap: 50,   
     roadWidth: 30,
     groundWidth: 600,     
     warmupTime: 5000,
@@ -372,17 +462,24 @@ const state = {
         offsetY: 0, velY: 0,      
         fuel: 100, angle: 0, steerAngle: 0 
     },
+    shield: { active: false }, 
+    buffs: { magnet: 0, shield: 0, fuelRegen: 0 },
     input: { gas: false, brake: false, left: false, right: false, jump: false },
     generation: { lastX: 0, lastY: 0, currentSlope: 0.5, targetSlope: 0.5, segmentRemaining: 1500 },
     terrainChunks: [], 
     rocks: [],
     coins: [],
     rollingRocks: [],
-    cars: []
+    cars: [],
+    trees: [],
+    tractors: [],
+    pickups: [], 
+    fps: { lastTime: 0, frames: 0, value: 60 }
 };
 
 // Three.js Globals
 let scene, camera, renderer, bikeGroup, handlebarGroup, speedoContext, speedoTexture, roadTexture, groundTexture, rockTexture;
+let shieldMesh;
 
 function initThree() {
     const container = document.getElementById('game-container');
@@ -445,83 +542,99 @@ function createRockTexture() {
 // Bike Mesh
 function createBike() {
     bikeGroup = new THREE.Group();
-    // Frame body - Long on X axis
+    // Frame: Long on X axis
     const frame = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 0.5), new THREE.MeshLambertMaterial({ color: 0x333333 }));
     frame.position.y = 2; frame.castShadow = true; bikeGroup.add(frame);
     
-    // FPS Handlebars
-    const speedoCanvas = document.createElement('canvas'); speedoCanvas.width = 128; speedoCanvas.height = 64;
-    speedoContext = speedoCanvas.getContext('2d'); speedoTexture = new THREE.CanvasTexture(speedoCanvas);
-    
+    // Forks connecting frame to wheel area
+    const forkGeo = new THREE.CylinderGeometry(0.15, 0.1, 3.5, 8);
+    const forkMat = new THREE.MeshStandardMaterial({color: 0x444444});
+    // Left Fork
+    const lFork = new THREE.Mesh(forkGeo, forkMat);
+    lFork.position.set(3, 2.5, -0.6); // Forward X=3, Y=2.5, Left Z=-0.6
+    lFork.rotation.z = -0.3; // Angled forward
+    bikeGroup.add(lFork);
+    // Right Fork
+    const rFork = new THREE.Mesh(forkGeo, forkMat);
+    rFork.position.set(3, 2.5, 0.6);
+    rFork.rotation.z = -0.3;
+    bikeGroup.add(rFork);
+
+    // FPS Handlebars Group
     handlebarGroup = new THREE.Group();
     
-    // Main Bar - Cylinder along Z (Left/Right)
+    // Main Bar - Horizontal on Z
     const barGeo = new THREE.CylinderGeometry(0.12, 0.12, 5, 16); 
+    barGeo.rotateX(Math.PI / 2); // Rotate geom to Z
     const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.3 });
     const bar = new THREE.Mesh(barGeo, metalMat); 
-    bar.rotation.x = Math.PI / 2; // FIXED: Rotate X 90 to align cylinder to Z-axis
     handlebarGroup.add(bar);
 
     // Crossbar Pad
     const padGeo = new THREE.CylinderGeometry(0.25, 0.25, 2, 16); 
+    padGeo.rotateX(Math.PI / 2);
     const pad = new THREE.Mesh(padGeo, new THREE.MeshLambertMaterial({ color: 0x333333 })); 
-    pad.rotation.x = Math.PI / 2; // FIXED: Rotate X 90
     handlebarGroup.add(pad);
 
-    // Speedometer - Faces -X (Camera)
+    // Speedometer 
+    const speedoCanvas = document.createElement('canvas'); speedoCanvas.width = 128; speedoCanvas.height = 64;
+    speedoContext = speedoCanvas.getContext('2d'); speedoTexture = new THREE.CanvasTexture(speedoCanvas);
+    
     const screenGeo = new THREE.PlaneGeometry(1.5, 0.75); 
-    const screen = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: speedoTexture })); 
-    screen.position.set(0, 0.4, 0.2); 
-    screen.rotation.x = -Math.PI / 4; 
-    screen.rotation.y = -Math.PI / 2; // FIXED: Face -X direction (Backwards)
-    // Wait, Plane default normal is +Z. 
-    // Rotate Y -90 => Faces +X. 
-    // Rotate Y +90 => Faces -X.
-    // Let's try Y = Math.PI / 2.
-    screen.rotation.y = Math.PI / 2; 
+    // MODIFIED: Added transparent: true to material
+    const screen = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: speedoTexture, transparent: true })); 
+    // MODIFIED: Lowered Y position from 0.4 to 0.25
+    screen.position.set(0, 0.25, 0.2); 
+    // Rotate to face camera (Camera is at -X relative to handlebars)
+    // Plane default normal +Z. 
+    // Rotate Y -90 => Normal -X.
+    // Rotate X -45 => Tilt Up.
+    screen.rotation.order = 'YXZ';
+    screen.rotation.y = -Math.PI / 2;
+    screen.rotation.x = -Math.PI / 4;
     handlebarGroup.add(screen);
 
-    // Grips & Levers (Aligned on Z)
+    // Grips - Orange
     const gripGeo = new THREE.CylinderGeometry(0.14, 0.14, 1, 12); 
+    gripGeo.rotateX(Math.PI / 2); // Align geom to Z
     const gripMat = new THREE.MeshLambertMaterial({ color: 0xcc5500 });
-
+    
     const lGrip = new THREE.Mesh(gripGeo, gripMat); 
-    lGrip.position.set(0, 0, -2.2); 
-    lGrip.rotation.x = Math.PI / 2; // Align to Z
+    lGrip.position.set(0, 0, -2.2); // Z position
     handlebarGroup.add(lGrip);
 
     const rGrip = new THREE.Mesh(gripGeo, gripMat); 
     rGrip.position.set(0, 0, 2.2); 
-    rGrip.rotation.x = Math.PI / 2; // Align to Z
     handlebarGroup.add(rGrip);
 
+    // Levers
     const leverGeo = new THREE.BoxGeometry(0.2, 0.05, 0.8); 
     const leverMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
-    
-    const lLever = new THREE.Mesh(leverGeo, leverMat);
-    lLever.position.set(0.2, -0.2, -1.8); 
-    lLever.rotation.z = -0.2;
-    handlebarGroup.add(lLever);
+    const lLever = new THREE.Mesh(leverGeo, leverMat); lLever.position.set(0.2, -0.2, -1.8); lLever.rotation.z = -0.2; handlebarGroup.add(lLever);
+    const rLever = new THREE.Mesh(leverGeo, leverMat); rLever.position.set(0.2, -0.2, 1.8); rLever.rotation.z = -0.2; handlebarGroup.add(rLever);
 
-    const rLever = new THREE.Mesh(leverGeo, leverMat);
-    rLever.position.set(0.2, -0.2, 1.8);
-    rLever.rotation.z = -0.2;
-    handlebarGroup.add(rLever);
-
-    const stemGeo = new THREE.BoxGeometry(1.5, 0.4, 0.4);
-    const stem = new THREE.Mesh(stemGeo, metalMat);
-    stem.position.set(-0.5, -0.5, 0); 
-    stem.rotation.z = 0.5; 
-    handlebarGroup.add(stem);
-
+    // Position Handlebars at top of forks
     handlebarGroup.position.set(3.5, 4.2, 0); 
     bikeGroup.add(handlebarGroup);
 
+    // Fender
     const fenderGeo = new THREE.CylinderGeometry(2.6, 2.6, 1, 16, 1, true, 0, Math.PI); 
-    fenderGeo.rotateX(Math.PI / 2); 
+    fenderGeo.rotateX(Math.PI / 2); // Curve along Z
     const fender = new THREE.Mesh(fenderGeo, new THREE.MeshLambertMaterial({ color: 0xcc5500, side: THREE.DoubleSide }));
     fender.position.set(3.0, 1.5, 0.0);
+    // Rotate fender to align with wheel (wheel axle is Z)
+    fender.rotation.y = Math.PI / 2; // NOW X becomes Z. 
+    // Wait, cylinder defaults Y up. X rot makes it Z tube.
+    // If we want a wheel cover, it wraps around Z axis.
+    // Initial geom with rotateX is correct wrapper.
+    // We want it oriented along Z. It is.
+    // Just ensure position is right.
+    fender.rotation.set(0, 0, 0); // Reset
     bikeGroup.add(fender);
+
+    shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(3.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.3, wireframe: true }));
+    shieldMesh.visible = false;
+    bikeGroup.add(shieldMesh);
 
     scene.add(bikeGroup);
 }
@@ -539,11 +652,17 @@ function createTreeMesh() {
 
 // Terrain Gen
 function generateHeightStep() {
+    const meters = state.generation.lastX / 10;
     if (state.generation.segmentRemaining <= 0) {
-        const r = Math.random();
-        if (r < 0.70) { state.generation.targetSlope = 0.3 + Math.random() * 0.4; state.generation.segmentRemaining = 1000 + Math.random() * 1500; } 
-        else if (r < 0.91) { state.generation.targetSlope = 0; state.generation.segmentRemaining = 600 + Math.random() * 600; } 
-        else { state.generation.targetSlope = -0.2 - Math.random() * 0.2; state.generation.segmentRemaining = (300 + Math.random() * 300) * 0.8; }
+        if (meters > 2000) {
+            state.generation.targetSlope = 1.2; 
+            state.generation.segmentRemaining = 2000; 
+        } else {
+            const r = Math.random();
+            if (r < 0.70) { state.generation.targetSlope = 0.3 + Math.random() * 0.4; state.generation.segmentRemaining = 1000 + Math.random() * 1500; } 
+            else if (r < 0.91) { state.generation.targetSlope = 0; state.generation.segmentRemaining = 600 + Math.random() * 600; } 
+            else { state.generation.targetSlope = -0.2 - Math.random() * 0.2; state.generation.segmentRemaining = (300 + Math.random() * 300) * 0.8; }
+        }
     }
     state.generation.currentSlope += (state.generation.targetSlope - state.generation.currentSlope) * 0.05;
     state.generation.segmentRemaining -= 10; state.generation.lastX += 10; state.generation.lastY -= state.generation.currentSlope * 10;
@@ -551,16 +670,15 @@ function generateHeightStep() {
 }
 
 function updateTerrain3D() {
-    const renderLimit = state.bike.x + CONFIG.renderDistance;
+    const renderDist = state.bike.x + (perfMode ? 400 : CONFIG.renderDistance);
     let startX = state.terrainChunks.length > 0 ? state.terrainChunks[state.terrainChunks.length - 1].userData.endX : state.generation.lastX;
     let startY = state.terrainChunks.length > 0 ? state.terrainChunks[state.terrainChunks.length - 1].userData.endY : state.generation.lastY;
 
     const diffSettings = DIFFICULTY[currentDiff];
-    
-    // Scale intensity with distance (1.0 at start, 2.0 at 10000m)
-    const intensity = 1 + (Math.max(0, state.bike.x) / 10000);
+    let intensity = 1 + (Math.max(0, state.bike.x) / 10000);
+    if(intensity > 3) intensity = 3;
 
-    while (startX < renderLimit) {
+    while (startX < renderDist) {
         const numSegments = 20; const chunkGroup = new THREE.Group();
         const roadVerts=[], roadUVs=[], gLeftVerts=[], gLeftUVs=[], gRightVerts=[], gRightUVs=[];
         let currentX = startX, currentY = startY;
@@ -579,22 +697,25 @@ function updateTerrain3D() {
             
             const speedKmh = state.bike.vx * CONFIG.physicsRatio;
             
-            // Standard Rocks
             if ((speedKmh > 5 || Math.random() < 0.1) && Math.random() < (diffSettings.obsRate * intensity * 0.1)) spawnRock(currentX, currentY);
-            // Coins
             if (Math.random() < 0.10) spawnCoin(currentX, currentY);
-            
-            // Rolling Rocks
             if (Math.random() < (diffSettings.obsRate * intensity * 0.02)) spawnRollingRock(currentX, currentY);
-
-            // Traffic
             if (Math.random() < (diffSettings.trafficRate * intensity * 0.05)) spawnCar(currentX, currentY);
+            if (Math.random() < (diffSettings.trafficRate * intensity * 0.02)) spawnTractor(currentX, currentY);
+            if (Math.random() < (diffSettings.obsRate * intensity * 0.03)) spawnFallenTree(currentX, currentY);
+            if (Math.random() < 0.005) {
+                const r = Math.random();
+                if(r < 0.33) spawnPickup(currentX, currentY, 'magnet');
+                else if(r < 0.66) spawnPickup(currentX, currentY, 'shield');
+                else spawnPickup(currentX, currentY, 'fuel');
+            }
 
-            if (Math.random() < 0.4) {
+            const treeChance = perfMode ? 0.1 : 0.4;
+            if (Math.random() < treeChance) {
                 const t = createTreeMesh(); const offZ = -(roadHalf + Math.random() * (groundHalf - roadHalf - 20));
                 t.position.set(currentX, currentY + Math.abs(offZ/groundHalf) * 40, offZ); chunkGroup.add(t);
             }
-            if (Math.random() < 0.4) {
+            if (Math.random() < treeChance) {
                 const t = createTreeMesh(); const offZ = (roadHalf + Math.random() * (groundHalf - roadHalf - 20));
                 t.position.set(currentX, currentY + Math.abs(offZ/groundHalf) * 40, offZ); chunkGroup.add(t);
             }
@@ -603,7 +724,7 @@ function updateTerrain3D() {
         const buildMesh = (v, uv, m, n) => {
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
             const ind = []; for (let i = 0; i < numSegments; i++) { const r1 = i*2, r2 = (i+1)*2; ind.push(r1, r1+1, r2, r2, r1+1, r2+1); }
-            g.setIndex(ind); g.computeVertexNormals(); const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = true; if(n) mesh.name = n; return mesh;
+            g.setIndex(ind); g.computeVertexNormals(); const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = !perfMode; if(n) mesh.name = n; return mesh;
         };
         const rM = new THREE.MeshLambertMaterial({ map: roadTexture, side: THREE.DoubleSide });
         const gM = new THREE.MeshLambertMaterial({ map: groundTexture, side: THREE.DoubleSide });
@@ -615,29 +736,25 @@ function updateTerrain3D() {
 
     const cleanup = (arr) => arr.filter(o => { 
         if (o.x < state.bike.x - 100) { 
-            scene.remove(o.mesh); 
-            o.mesh.traverse((obj) => {
-                if (obj.geometry) obj.geometry.dispose();
-                if (obj.material) {
-                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-                    else obj.material.dispose();
-                }
-            });
+            const obj = o.mesh; scene.remove(obj);
+            obj.traverse((child) => { if (child.geometry) child.geometry.dispose(); if (child.material) { if (Array.isArray(child.material)) child.material.forEach(m => m.dispose()); else child.material.dispose(); } });
             return false; 
-        } 
-        return true; 
+        } return true; 
     });
+
     while(state.terrainChunks.length > 0 && state.terrainChunks[0].userData.endX < state.bike.x - 200) {
-        const c = state.terrainChunks.shift(); c.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) { if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); } }); scene.remove(c);
+        const c = state.terrainChunks.shift(); scene.remove(c);
+        c.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) { if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); } }); 
     }
     state.rocks = cleanup(state.rocks); state.coins = cleanup(state.coins); state.rollingRocks = cleanup(state.rollingRocks); state.cars = cleanup(state.cars);
+    state.tractors = cleanup(state.tractors); state.trees = cleanup(state.trees); state.pickups = cleanup(state.pickups);
 }
 
 // Spawners
 function spawnRock(x, y) {
     const z = (Math.random() - 0.5) * (CONFIG.roadWidth - 4);
     const m = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 0), new THREE.MeshStandardMaterial({ map: rockTexture, color: 0xaaaaaa, roughness: 0.8 }));
-    m.position.set(x, y + 1, z); m.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3); m.castShadow = true;
+    m.position.set(x, y + 1, z); m.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3); m.castShadow = !perfMode;
     scene.add(m); state.rocks.push({ mesh: m, x, y, z, radius: 1.5 });
 }
 function spawnCoin(x, y) {
@@ -648,31 +765,52 @@ function spawnCoin(x, y) {
 }
 function spawnRollingRock(x, y) {
     const side = Math.random() < 0.5 ? -1 : 1;
-    const z = side * (CONFIG.roadWidth/2 + 5);
-    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 1), new THREE.MeshStandardMaterial({ map: rockTexture, color: 0x887766, roughness: 0.9 }));
-    m.position.set(x, y + 2, z); m.castShadow = true; scene.add(m);
-    state.rollingRocks.push({ mesh: m, x, y, z, vz: -side * 0.3, radius: 2.0 });
+    const z = side * (CONFIG.roadWidth/2 + 20); 
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(2.5, 1), new THREE.MeshStandardMaterial({ map: rockTexture, color: 0x887766, roughness: 0.9 }));
+    m.position.set(x, y + 2, z); m.castShadow = !perfMode; scene.add(m);
+    state.rollingRocks.push({ mesh: m, x, y, z, vz: -side * 0.8, radius: 2.5 });
 }
 function spawnCar(x, y) {
-    const lane = Math.random() < 0.5 ? -8 : 8; // Left or right lane
+    const lane = Math.random() < 0.5 ? -8 : 8; 
     const color = new THREE.Color().setHSL(Math.random(), 0.8, 0.5);
-    
     const carGroup = new THREE.Group();
     const body = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 8), new THREE.MeshPhongMaterial({ color: color }));
-    body.position.y = 2; body.castShadow = true; carGroup.add(body);
+    body.position.y = 2; body.castShadow = !perfMode; carGroup.add(body);
     const roof = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.5, 5), new THREE.MeshPhongMaterial({ color: 0x333333 }));
     roof.position.y = 4; carGroup.add(roof);
-    
-    // Headlights
     const hl = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 0.2), new THREE.MeshBasicMaterial({ color: 0xffffcc }));
     hl.position.set(-1.2, 2, 4); carGroup.add(hl);
     const hr = hl.clone(); hr.position.set(1.2, 2, 4); carGroup.add(hr);
-
-    carGroup.position.set(x, y, lane);
-    scene.add(carGroup);
-    
-    // Cars move TOWARDS the player (negative X direction relative to spawn)
+    carGroup.position.set(x, y, lane); scene.add(carGroup);
     state.cars.push({ mesh: carGroup, x, y, z: lane, vx: -0.8, radius: 2.5 });
+}
+function spawnTractor(x, y) {
+    const side = Math.random() < 0.5 ? -1 : 1; const z = side * 5; 
+    const grp = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 12), new THREE.MeshLambertMaterial({color: 0xe74c3c}));
+    body.position.y = 4; grp.add(body);
+    const wGeo = new THREE.CylinderGeometry(3, 3, 2, 12); wGeo.rotateZ(Math.PI/2);
+    const wMat = new THREE.MeshLambertMaterial({color: 0x111111});
+    const w1 = new THREE.Mesh(wGeo, wMat); w1.position.set(0, 3, -4); grp.add(w1);
+    const w2 = new THREE.Mesh(wGeo, wMat); w2.position.set(0, 3, 4); grp.add(w2);
+    grp.position.set(x, y, z); scene.add(grp);
+    state.tractors.push({ mesh: grp, x, y, z, radius: 5.0, vx: -0.4 });
+}
+function spawnFallenTree(x, y) {
+    const side = Math.random() < 0.5 ? -1 : 1; const z = side * (CONFIG.roadWidth / 4); 
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.5, 20, 8), new THREE.MeshLambertMaterial({ color: 0x5d4037 }));
+    m.rotation.x = Math.PI / 2; m.position.set(x, y + 1, z); m.castShadow = !perfMode;
+    scene.add(m); state.trees.push({ mesh: m, x, y, z, width: 15 }); 
+}
+function spawnPickup(x, y, type) {
+    const z = (Math.random() - 0.5) * (CONFIG.roadWidth - 6);
+    let color, shape;
+    if(type === 'magnet') { color=0xbf55ec; shape = new THREE.TorusGeometry(1.5, 0.3, 8, 16); }
+    else if(type === 'shield') { color=0x00ffff; shape = new THREE.SphereGeometry(1.5, 8, 8); }
+    else { color=0x2ecc71; shape = new THREE.BoxGeometry(2, 2, 2); }
+    const m = new THREE.Mesh(shape, new THREE.MeshPhongMaterial({ color: color, emissive: color, emissiveIntensity: 0.5 }));
+    m.position.set(x, y + 2, z); scene.add(m);
+    state.pickups.push({ mesh: m, x, y, z, type, collected: false });
 }
 
 function getTerrainInfo(x) {
@@ -694,10 +832,38 @@ function getTerrainInfo(x) {
 function updatePhysics() {
     if (!state.running) return;
     const b = state.bike;
+    const now = Date.now();
     const terrain = getTerrainInfo(b.x);
     
+    if (state.buffs.fuelRegen > now) {
+        if(b.fuel < CONFIG.baseMaxFuel) b.fuel += 0.16; 
+        document.getElementById('time-fuel').innerText = Math.ceil((state.buffs.fuelRegen - now)/1000);
+        document.getElementById('buff-fuel').style.display = 'flex';
+    } else { document.getElementById('buff-fuel').style.display = 'none'; }
+
+    if (state.buffs.shield > now) {
+        state.shield.active = true; shieldMesh.visible = true;
+        document.getElementById('time-shield').innerText = Math.ceil((state.buffs.shield - now)/1000);
+        document.getElementById('buff-shield').style.display = 'flex';
+    } else { 
+        state.shield.active = false; shieldMesh.visible = false;
+        document.getElementById('buff-shield').style.display = 'none'; 
+    }
+
+    if (state.buffs.magnet > now) {
+        document.getElementById('time-magnet').innerText = Math.ceil((state.buffs.magnet - now)/1000);
+        document.getElementById('buff-magnet').style.display = 'flex';
+    } else { document.getElementById('buff-magnet').style.display = 'none'; }
+
+    const meters = b.x / 10;
+    if (meters > 2000) {
+        scene.background.setHex(0xffaa55); scene.fog.color.setHex(0xffaa55);
+    } else {
+        scene.background.setHex(0x87CEEB); scene.fog.color.setHex(0x87CEEB);
+    }
+
     if (b.offsetY > 0 || b.velY > 0) { b.velY -= 0.1; b.offsetY += b.velY; if (b.offsetY <= 0) { b.offsetY = 0; b.velY = 0; } }
-    else { b.offsetY = 0; b.velY = 0; if (state.input.jump && saveData.upgrades.hasJump && (Date.now() - state.lastJumpTime > CONFIG.jumpCooldown)) { b.velY = CONFIG.jumpForce; state.lastJumpTime = Date.now(); } }
+    else { b.offsetY = 0; b.velY = 0; if (state.input.jump && saveData.upgrades.hasJump && (now - state.lastJumpTime > CONFIG.jumpCooldown)) { b.velY = CONFIG.jumpForce; state.lastJumpTime = now; } }
 
     b.y = terrain.y + b.offsetY;
     if (b.offsetY > 0) b.angle *= 0.95; else b.angle = terrain.angle;
@@ -717,51 +883,63 @@ function updatePhysics() {
     const friction = CONFIG.baseFriction + (saveData.upgrades.aero - 1) * 0.002;
     b.vx *= friction; if (b.vx < 0) b.vx = 0;
 
+    const distBonusKmh = Math.floor((b.x / 10) / 500);
     const sLvl = saveData.upgrades.speed;
-    const maxSpd = (CONFIG.baseMaxSpeedKmh + (sLvl-1)*1.111) / CONFIG.physicsRatio;
-    if (!state.input.gas && b.vx > maxSpd) b.vx *= 0.99; if (b.vx > maxSpd) b.vx = maxSpd;
+    const upgradeBonusKmh = (sLvl-1) * 1.111;
+    const totalMaxKmh = CONFIG.baseMaxSpeedKmh + upgradeBonusKmh + distBonusKmh;
+    const maxSpdInternal = totalMaxKmh / CONFIG.physicsRatio;
+
+    if (!state.input.gas && b.vx > maxSpdInternal) b.vx *= 0.99; 
+    if (b.vx > maxSpdInternal) b.vx = maxSpdInternal;
 
     b.x += b.vx * CONFIG.movementScale;
 
-    // Obstacle Logic
-    // Rolling Rocks
+    const hitObstacle = (msg, objMesh) => {
+        if (state.shield.active) {
+            state.buffs.shield = 0; state.shield.active = false; shieldMesh.visible = false;
+            if(objMesh) objMesh.visible = false;
+            b.vx *= -0.5;
+        } else {
+            crash(msg);
+        }
+    };
+
     state.rollingRocks.forEach(r => {
         r.z += r.vz; r.mesh.position.z = r.z;
-        r.mesh.rotation.x += 0.1; r.mesh.rotation.z -= r.vz;
-        // Adjust Y to ground
-        // Approximate Y from player's chunk logic is expensive, let's just keep it near spawn Y
-        // Simple collision
-        if (Math.abs(b.x - r.x) < 3 && Math.abs(b.z - r.z) < 3 && b.offsetY < 2) {
+        r.mesh.rotation.x -= r.vz / r.radius; 
+        if (r.mesh.visible && Math.abs(b.x - r.x) < 3 && Math.abs(b.z - r.z) < 3 && b.offsetY < 2) {
              const spd = b.vx * CONFIG.physicsRatio;
-             if (spd >= (saveData.upgrades.hasTires ? 30 : 20)) crash("Hit a rolling boulder!"); else b.vx *= 0.5;
+             if (spd >= (saveData.upgrades.hasTires ? 30 : 20)) hitObstacle("Hit a rolling boulder!", r.mesh); else b.vx *= 0.5;
         }
     });
 
-    // Cars
-    state.cars.forEach(c => {
+    [...state.cars, ...state.tractors].forEach(c => {
         c.x += c.vx; 
-        // Update Y based on slope roughly or keep existing Y + slope diff?
-        // Let's re-snap Y to terrain to look good
         const t = getTerrainInfo(c.x); c.y = t.y; c.mesh.rotation.z = t.angle;
         c.mesh.position.set(c.x, c.y, c.z);
-        
-        // Collision (Instant Death)
-        if (Math.abs(b.x - c.x) < 4 && Math.abs(b.z - c.z) < 3.5 && b.offsetY < 3) {
-            crash("Head-on collision!");
+        if (c.mesh.visible && Math.abs(b.x - c.x) < 5 && Math.abs(b.z - c.z) < (c.radius || 3.5) && b.offsetY < 5) {
+            hitObstacle("Head-on collision!", c.mesh);
         }
     });
 
-    // Static Rocks
+    state.trees.forEach(t => {
+        if (t.mesh.visible && Math.abs(b.x - t.x) < 2 && Math.abs(b.z - t.z) < (t.width/2 + 1) && b.offsetY < 2) {
+            hitObstacle("Hit a fallen tree!", t.mesh);
+        }
+    });
+
     const safeRockSpeed = saveData.upgrades.hasTires ? 30 : 20;
     if (b.offsetY < 2) {
         for (const r of state.rocks) {
-            if (Math.sqrt((b.x - r.x)**2 + (b.z - r.z)**2) < r.radius + 1) {
-                if (b.vx * CONFIG.physicsRatio >= safeRockSpeed) crash("You hit a rock!"); else b.vx *= 0.5;
+            if (r.mesh.visible && Math.sqrt((b.x - r.x)**2 + (b.z - r.z)**2) < r.radius + 1) {
+                if (b.vx * CONFIG.physicsRatio >= safeRockSpeed) hitObstacle("You hit a rock!", r.mesh); else b.vx *= 0.5;
             }
         }
     }
 
-    const pRad = saveData.upgrades.hasMagnet ? 10.0 : 4.0;
+    let pRad = (saveData.upgrades.hasMagnet || state.buffs.magnet > now) ? 10.0 : 4.0;
+    if (state.buffs.magnet > now) pRad = 25.0;
+
     state.coins.forEach(c => {
         if(!c.collected && Math.sqrt((b.x - c.x)**2 + (b.z - c.z)**2) < pRad && b.offsetY < 4) {
             c.collected = true; c.mesh.visible = false;
@@ -772,14 +950,25 @@ function updatePhysics() {
         c.mesh.rotation.x += 0.05;
     });
 
+    state.pickups.forEach(p => {
+        if(!p.collected && Math.abs(b.x - p.x) < 3 && Math.abs(b.z - p.z) < 3) {
+            p.collected = true; p.mesh.visible = false;
+            const n = Date.now();
+            if(p.type === 'magnet') state.buffs.magnet = n + 20000;
+            if(p.type === 'shield') state.buffs.shield = n + 30000;
+            if(p.type === 'fuel') state.buffs.fuelRegen = n + 10000;
+        }
+        p.mesh.rotation.y += 0.05;
+    });
+
     if (b.fuel <= 0 && b.vx < (1 / CONFIG.physicsRatio)) endGame("OUT OF FUEL");
     if (b.fuel < 0) b.fuel = 0;
 
-    const isWarmup = (Date.now() - state.startTime) < CONFIG.warmupTime;
+    const isWarmup = (now - state.startTime) < CONFIG.warmupTime;
     const hint = document.getElementById('start-msg');
     if (!state.input.gas || b.fuel > 0) {
         hint.classList.remove('shake');
-        if (isWarmup) { hint.style.color = '#4cd137'; hint.innerText = `WARM ENGINE! ${(5 - (Date.now() - state.startTime)/1000).toFixed(1)}s`; }
+        if (isWarmup) { hint.style.color = '#4cd137'; hint.innerText = `WARM ENGINE! ${(5 - (now - state.startTime)/1000).toFixed(1)}s`; }
         else { hint.innerText = ""; }
     }
 }
@@ -792,11 +981,14 @@ function updateVisuals() {
     if (handlebarGroup) handlebarGroup.rotation.y = state.bike.steerAngle * 0.5;
 
     const speedKmh = Math.floor(state.bike.vx * CONFIG.physicsRatio);
-    speedoContext.fillStyle = '#000'; speedoContext.fillRect(0, 0, 128, 64);
+    speedoContext.clearRect(0, 0, 128, 64);
     speedoContext.fillStyle = '#4cd137'; speedoContext.font = 'bold 30px Arial';
+    speedoContext.shadowColor = "black";
+    speedoContext.shadowBlur = 4;
     speedoContext.textAlign = 'center'; speedoContext.fillText(speedKmh + " KM/H", 64, 42);
     speedoTexture.needsUpdate = true;
 
+    // Shake Logic
     let sX = 0, sY = 0;
     if (speedKmh > 20 && state.bike.offsetY <= 0) {
         const i = (speedKmh / 40) * 0.15;
@@ -804,10 +996,56 @@ function updateVisuals() {
         if (state.input.brake) sY += (Math.random() - 0.5) * 0.2;
     }
 
-    camera.position.x = state.bike.x + 1; camera.position.y = state.bike.y + 5 + sY; camera.position.z = state.bike.z + sX;
-    const lY = state.bike.y + (Math.sin(state.bike.angle) * 50);
-    camera.lookAt(state.bike.x + 50, lY + 4, state.bike.z * 0.5);
-    camera.rotation.z += state.bike.steerAngle * 0.15;
+    // --- NEW RIGID CAMERA LOGIC ---
+    // Instead of fixed offsets, we rotate the camera offset by the bike's pitch angle
+    // so it stays "attached" to the rider's head position relative to the frame.
+    
+    const angle = state.bike.angle;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+
+    // Offset: X=1 (slightly back/forward), Y=5 (height)
+    // Rotate 2D vector (1, 5)
+    const camOffsetX = 1 * cosA - 5 * sinA;
+    const camOffsetY = 1 * sinA + 5 * cosA;
+
+    camera.position.x = state.bike.x + camOffsetX;
+    camera.position.y = state.bike.y + camOffsetY + sY;
+    camera.position.z = state.bike.z + sX;
+
+    // Look Target: 50 units forward relative to bike pitch
+    const lookDist = 50;
+    const lookOffsetX = lookDist * cosA - 4 * sinA; // Look at height 4 relative to bike
+    const lookOffsetY = lookDist * sinA + 4 * cosA;
+
+    camera.lookAt(
+        state.bike.x + lookOffsetX, 
+        state.bike.y + lookOffsetY, 
+        state.bike.z * 0.5
+    );
+
+    // Apply Camera Roll (Tilt into turn)
+    camera.rotation.z += state.bike.steerAngle * 0.15; 
+}
+
+// AI Lag Detection
+function checkPerformance() {
+    const now = performance.now();
+    const delta = now - state.fps.lastTime;
+    
+    if (delta >= 1000) {
+        const fps = state.fps.frames;
+        state.fps.frames = 0;
+        state.fps.lastTime = now;
+        
+        if (fps < 30 && !perfMode) {
+            perfMode = true;
+            scene.fog.far = 400; 
+            document.getElementById('perf-warning').style.display = 'block';
+            console.log("Lag detected. Engaging Performance Mode.");
+        }
+    }
+    state.fps.frames++;
 }
 
 // UI
@@ -836,7 +1074,39 @@ function updateShopUI() {
         if (saveData.upgrades[k]) { b.innerText = "OWNED"; b.disabled = true; b.style.background = "#4cd137"; }
         else { b.innerText = c; b.disabled = saveData.coins < c; }
     };
-    unlock('btn-jump', 'hasJump', 2000); unlock('btn-tires', 'hasTires', 2500); unlock('btn-magnet', 'hasMagnet', 1500);
+    unlock('btn-jump', 'hasJump', 2000); unlock('btn-tires', 'hasTires', 2500); 
+    unlock('btn-magnet', 'hasMagnet', 1500); unlock('btn-regen', 'hasRegen', 5000);
+}
+
+// NEW FUNCTION ADDED
+function upgradeAll() {
+    let purchased = true;
+    while (purchased) {
+        purchased = false;
+        // Define upgrade types, dynamic costs, and max levels
+        const upgrades = [
+            { id: 'fuel', cost: 250 * saveData.upgrades.fuel, max: 999 },
+            { id: 'handling', cost: 250 * saveData.upgrades.handling, max: 5 },
+            { id: 'speed', cost: 250 * saveData.upgrades.speed, max: 10 },
+            { id: 'aero', cost: 300 * saveData.upgrades.aero, max: 5 }
+        ];
+
+        // Filter for upgrades we can afford and aren't maxed
+        const affordable = upgrades.filter(u => 
+            saveData.coins >= u.cost && saveData.upgrades[u.id] < u.max
+        );
+
+        if (affordable.length > 0) {
+            // Sort by cost (buy cheapest first to maximize upgrades)
+            affordable.sort((a, b) => a.cost - b.cost);
+            
+            const target = affordable[0];
+            saveData.coins -= target.cost;
+            saveData.upgrades[target.id]++;
+            purchased = true; // Continue loop
+        }
+    }
+    saveGame();
 }
 
 function buyUpgrade(type) {
@@ -846,7 +1116,8 @@ function buyUpgrade(type) {
         const max = (type === 'handling' || type === 'aero') ? 5 : (type === 'speed' ? 10 : 999);
         if (saveData.coins >= cost && lvl < max) { saveData.coins -= cost; saveData.upgrades[type]++; saveGame(); }
     } else {
-        const u = { jump: 2000, tires: 2500, magnet: 1500 }; const k = { jump: 'hasJump', tires: 'hasTires', magnet: 'hasMagnet' };
+        const u = { jump: 2000, tires: 2500, magnet: 1500, regen: 5000 }; 
+        const k = { jump: 'hasJump', tires: 'hasTires', magnet: 'hasMagnet', regen: 'hasRegen' };
         if (saveData.coins >= u[type] && !saveData.upgrades[k[type]]) { saveData.coins -= u[type]; saveData.upgrades[k[type]] = true; saveGame(); }
     }
 }
@@ -880,16 +1151,29 @@ window.addEventListener('keydown', (e) => handleKey(e, true)); window.addEventLi
 function resetGame() {
     state.running = true; state.startTime = Date.now(); state.coinsCollectedRun = 0;
     state.bike.x = 0; state.bike.y = 0; state.bike.z = 0; state.bike.vx = 0; state.bike.offsetY = 0; state.bike.velY = 0; state.bike.steerAngle = 0;
+    state.shield.active = false; shieldMesh.visible = false; document.getElementById('buff-shield').style.display = 'none';
+    state.buffs = { magnet: 0, shield: 0, fuelRegen: 0 };
+    document.querySelectorAll('.active-buff').forEach(el => el.style.display = 'none');
+    
     const maxF = CONFIG.baseMaxFuel * (1 + (saveData.upgrades.fuel - 1) * 0.2); state.bike.fuel = maxF;
     state.generation = { lastX: 0, lastY: 0, currentSlope: 0.5, targetSlope: 0.5, segmentRemaining: 1500 };
+    
     state.terrainChunks.forEach(c => { scene.remove(c); c.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) { if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); }}); });
     state.terrainChunks = [];
     const wipe = (arr) => { arr.forEach(o => scene.remove(o.mesh)); return []; };
     state.rocks = wipe(state.rocks); state.coins = wipe(state.coins); state.rollingRocks = wipe(state.rollingRocks); state.cars = wipe(state.cars);
+    state.trees = wipe(state.trees); state.tractors = wipe(state.tractors); state.pickups = wipe(state.pickups);
+    
     document.getElementById('game-over').style.display = 'none';
+    state.fps.lastTime = performance.now();
 }
 
-function animate() { requestAnimationFrame(animate); if(state.running) { updateTerrain3D(); updatePhysics(); } updateVisuals(); updateUI(); renderer.render(scene, camera); }
+function animate() { 
+    requestAnimationFrame(animate); 
+    checkPerformance();
+    if(state.running) { updateTerrain3D(); updatePhysics(); } 
+    updateVisuals(); updateUI(); renderer.render(scene, camera); 
+}
 initThree(); animate();
 </script>
 </body>
