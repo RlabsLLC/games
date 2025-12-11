@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clash Strategy</title>
+    <meta name="description" content="A strategic battle game with deck building and upgrades.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Titan+One&family=Roboto:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a1a1a;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Responsive Container */
+        #viewport {
+            position: relative;
+            background: #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            /* Default Mobile Portrait */
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+        }
+
+        /* Landscape Desktop Mode */
+        /* Applied via JS class 'desktop-mode' */
+        #viewport.desktop-mode {
+            max-width: none;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row; /* Side by side layout */
+        }
+        #viewport.desktop-mode canvas {
+            width: 75% !important; /* Map takes majority */
+            height: 100% !important;
+        }
+        #viewport.desktop-mode #game-ui {
+            width: 25% !important; /* Sidebar UI */
+            height: 100% !important;
+            position: relative; /* Not absolute */
+            border-left: 4px solid #333;
+            pointer-events: auto;
+            background: #222;
+        }
+        #viewport.desktop-mode .top-bar {
+            position: absolute;
+            top: 0; left: 0; width: 75%;
+            background: rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+        #viewport.desktop-mode .bottom-hud {
+            height: 100%;
+            border-top: none;
+            flex-direction: column;
+            padding-top: 20px;
+        }
+        #viewport.desktop-mode .hand {
+            flex-wrap: wrap;
+            height: auto;
+            justify-content: center;
+            gap: 10px;
+            overflow-y: auto;
+        }
+        /* Make cards slightly smaller in sidebar to fit better */
+        #viewport.desktop-mode .card-slot {
+            width: 60px;
+            height: 80px;
+            margin-bottom: 5px;
+        }
+
+        /* Canvas Layer */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #5D9E44;
+        }
+
+        /* UI Overlays */
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Main Menu */
+        #main-menu {
+            pointer-events: auto;
+            background: #2a2a2a;
+            color: white;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .menu-nav {
+            display: flex;
+            background: #111;
+            padding: 10px;
+            justify-content: space-around;
+        }
+        .menu-nav button {
+            background: none;
+            border: none;
+            color: #888;
+            font-family: 'Titan One';
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .menu-nav button.active { color: #ffd700; text-shadow: 0 0 10px #b8860b; }
+
+        .menu-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .menu-header-row {
+            margin-top: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 15px;
+        }
+
+        .gold-display {
+            background: #ffd700;
+            color: #4a3826;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            border: 2px solid #b8860b;
+        }
+
+        .deck-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .menu-card {
+            background: #444;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid #555;
+            position: relative;
+        }
+        .menu-card.selected { border-color: #4ecdc4; background: #3a4a4a; }
+        
+        .btn-action {
+            margin-top: 5px;
+            background: #4ecdc4;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: #000;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-action:disabled { background: #666; cursor: not-allowed; }
+        .btn-action.buy { background: #e67e22; color: white; }
+
+        .btn-play {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-family: 'Titan One', cursive;
+            font-size: 24px;
+            border-radius: 12px;
+            border-bottom: 6px solid #c0392b;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* In-Game UI */
+        #game-ui {
+            display: none; /* Hidden by default */
+            z-index: 10;
+        }
+
+        .top-bar {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+            font-family: 'Titan One', cursive;
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        .bottom-hud {
+            pointer-events: auto;
+            margin-top: auto;
+            background: linear-gradient(to top, #4a3826, #6b5238);
+            padding: 10px;
+            border-top: 4px solid #3d2e1f;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .elixir-bar {
+            width: 100%;
+            height: 24px;
+            background: #111;
+            border-radius: 12px;
+            border: 2px solid #000;
+            position: relative;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .elixir-fill {
+            height: 100%;
+            background: linear-gradient(to bottom, #d640ff, #aa00ff);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .elixir-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 2px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 0 1px 2px black;
+        }
+
+        .hand {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            height: 100px;
+        }
+
+        .card-slot {
+            width: 70px;
+            height: 90px;
+            background: #eee;
+            border-radius: 6px;
+            position: relative;
+            cursor: pointer;
+            border: 2px solid #000;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        .card-slot.selected { transform: translateY(-12px); border-color: #ffd700; }
+        .card-slot.disabled { filter: grayscale(1); opacity: 0.7; }
+        
+        .card-cost {
+            position: absolute;
+            top: 0; left: 0;
+            background: #aa00ff;
+            color: white;
+            padding: 2px 6px;
+            border-bottom-right-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            z-index: 2;
+        }
+        .card-name {
+            font-size: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            width: 100%;
+            text-align: center;
+            padding: 2px 0;
+            margin-top: auto;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .card-preview-canvas {
+            width: 100%;
+            height: 60px;
+            margin-top: 5px;
+        }
+
+        /* Message Overlay */
+        #msg-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            color: white;
+            font-family: 'Titan One', cursive;
+        }
+        #msg-title { font-size: 3rem; margin-bottom: 20px; color: #ffd700; text-shadow: 0 4px 0 #b8860b; }
+        #msg-reward { font-size: 1.5rem; color: #ffd700; margin-bottom: 30px; font-family: 'Roboto', sans-serif; }
+    </style>
+</head>
+<body>
+
+<div id="viewport">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Main Menu Layer -->
+    <div id="main-menu" class="layer" style="pointer-events: auto;">
+        <div class="menu-nav">
+            <button id="nav-deck" class="active" onclick="switchTab('deck')">Deck</button>
+            <button id="nav-shop" onclick="switchTab('shop')">Shop</button>
+        </div>
+
+        <div class="menu-header-row">
+            <div class="gold-display">💰 <span id="menu-gold">0</span></div>
+            <button class="btn-action" style="width:auto; margin:0;" onclick="toggleRotation()">Rotate View 🔄</button>
+        </div>
+
+        <!-- DECK TAB -->
+        <div id="tab-deck" class="menu-content">
+            <h2 style="border-bottom: 1px solid #555; padding-bottom: 5px; margin-bottom: 15px;">Battle Deck (8 Cards)</h2>
+            <div class="deck-grid" id="deck-grid">
+                <!-- Generated by JS -->
+            </div>
+            <button class="btn-play" onclick="startGame()">BATTLE!</button>
+        </div>
+
+        <!-- SHOP TAB -->
+        <div id="tab-shop" class="menu-content" style="display:none;">
+            <h2 style="border-bottom: 1px solid #555; padding-bottom: 5px;">Daily Rewards</h2>
+            <div id="daily-gift-container" class="menu-card" style="margin-bottom: 20px; background: #5a4a3a; border-color: #ffd700;">
+                <!-- Generated by JS -->
+            </div>
+
+            <h2 style="border-bottom: 1px solid #555; padding-bottom: 5px;">Card Shop</h2>
+            <div class="deck-grid" id="shop-grid">
+                <!-- Shop Items -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game UI Layer -->
+    <div id="game-ui" class="layer">
+        <div class="top-bar">
+            <div style="color: #ff6b6b">Enemy</div>
+            <div id="timer">3:00</div>
+            <div style="color: #4ecdc4">You</div>
+        </div>
+
+        <div class="bottom-hud">
+            <div class="elixir-bar">
+                <div class="elixir-fill" id="elixir-fill"></div>
+                <div class="elixir-text" id="elixir-val">5 / 10</div>
+            </div>
+            <div class="hand" id="hand-container">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- End Game Overlay -->
+    <div id="msg-overlay">
+        <div id="msg-title">VICTORY!</div>
+        <div id="msg-reward">+50 Gold</div>
+        <button class="btn-play" style="margin-top:0; padding: 10px 30px; font-size: 1.5rem;" onclick="returnToMenu()">Continue</button>
+    </div>
+</div>
+
+<script>
+/**
+ * CLASH STRATEGY - Advanced Features
+ */
+
+// --- Constants ---
+const LOGIC_W = 500;
+const LOGIC_H = 800;
+const BRIDGE_Y = LOGIC_H / 2;
+const FPS = 60;
+
+const COLORS = {
+    blue: '#4ecdc4',
+    blueDark: '#2a9d8f',
+    red: '#ff6b6b',
+    redDark: '#c0392b',
+    ground: '#5D9E44',
+    river: '#4da6ff',
+    bridge: '#8b5a2b'
+};
+
+// --- Data & Save System ---
+let playerData = {
+    gold: 500,
+    lastDaily: 0,
+    cards: {
+        'knight': { level: 1, count: 0 },
+        'archer': { level: 1, count: 0 },
+        'giant': { level: 1, count: 0 },
+        'fireball': { level: 1, count: 0 },
+        'skeleton': { level: 1, count: 0 },
+        'musketeer': { level: 1, count: 0 },
+        'baby_dragon': { level: 1, count: 0 },
+        'skarmy': { level: 1, count: 0 }
+    },
+    deck: ['knight', 'archer', 'giant', 'fireball', 'skeleton', 'musketeer', 'baby_dragon', 'skarmy'] 
+};
+
+// Card Definitions - UPDATED RANGES (Reduced further for tightness)
+const CARDS = {
+    knight: { 
+        name: 'Knight', cost: 3, type: 'troop', 
+        hp: 1000, dmg: 100, speed: 1.2, range: 10, attackSpeed: 1000, count: 1, // Range 10 (Melee)
+        target: 'ground', transport: 'ground', color: '#3498db'
+    },
+    archer: { 
+        name: 'Archers', cost: 3, type: 'troop', 
+        hp: 200, dmg: 70, speed: 1.2, range: 130, attackSpeed: 900, count: 2, 
+        target: 'all', transport: 'ground', color: '#9b59b6'
+    },
+    giant: { 
+        name: 'Giant', cost: 5, type: 'troop', 
+        hp: 2800, dmg: 180, speed: 0.7, range: 10, attackSpeed: 1500, count: 1, // Range 10 (Melee)
+        target: 'building', transport: 'ground', color: '#e67e22'
+    },
+    fireball: { 
+        name: 'Fireball', cost: 4, type: 'spell', 
+        dmg: 450, radius: 100, delay: 1000, color: '#e74c3c'
+    },
+    skeleton: {
+        name: 'Skelly', cost: 1, type: 'troop',
+        hp: 60, dmg: 40, speed: 1.5, range: 10, attackSpeed: 800, count: 3, // Range 10 (Melee)
+        target: 'ground', transport: 'ground', color: '#ecf0f1'
+    },
+    musketeer: {
+        name: 'Musketeer', cost: 4, type: 'troop',
+        hp: 450, dmg: 140, speed: 1.1, range: 160, attackSpeed: 1100, count: 1,
+        target: 'all', transport: 'ground', color: '#8e44ad'
+    },
+    baby_dragon: {
+        name: 'Baby Drag', cost: 4, type: 'troop',
+        hp: 700, dmg: 100, speed: 1.3, range: 90, attackSpeed: 1200, count: 1,
+        target: 'all', transport: 'air', color: '#2ecc71', splash: 50
+    },
+    skarmy: {
+        name: 'Skarmy', cost: 3, type: 'troop',
+        hp: 60, dmg: 40, speed: 1.5, range: 10, attackSpeed: 800, count: 10, // Range 10 (Melee)
+        target: 'ground', transport: 'ground', color: '#bdc3c7'
+    }
+};
+
+const ALL_KEYS = Object.keys(CARDS);
+
+// Game State
+let canvas, ctx;
+let isLandscape = false;
+let manualLandscape = null; // null = auto, true = force land, false = force port
+
+let game = {
+    active: false,
+    time: 0,
+    lastTime: 0,
+    entities: [],
+    projectiles: [],
+    effects: [],
+    player: { elixir: 5, hand: [], deck: [], next: null, side: 'blue', cycle: [] },
+    ai: { elixir: 5, hand: [], deck: [], next: null, side: 'red', timer: 0, cycle: [] }
+};
+let input = { down: false, x: 0, y: 0, selectedIdx: -1 };
+
+// --- Graphics Engine (Procedural) ---
+
+function drawUnitModel(ctx, type, x, y, radius, side, isIcon = false) {
+    const cPrimary = side === 'blue' ? COLORS.blue : COLORS.red;
+    
+    ctx.save();
+    ctx.translate(x, y);
+    if (isIcon) ctx.scale(0.8, 0.8);
+
+    switch(type) {
+        case 'knight':
+            ctx.fillStyle = cPrimary;
+            ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI*2); ctx.fill();
+            ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+            // Sword
+            ctx.fillStyle = '#eee';
+            ctx.beginPath(); ctx.moveTo(-5, 5); ctx.lineTo(10, -10); ctx.lineTo(12, -8); ctx.lineTo(-3, 7); ctx.fill();
+            break;
+        case 'archer':
+        case 'musketeer':
+            ctx.fillStyle = type === 'musketeer' ? '#8e44ad' : cPrimary;
+            ctx.beginPath(); ctx.moveTo(0, -radius); ctx.lineTo(radius, radius); ctx.lineTo(-radius, radius); ctx.fill();
+            if(type === 'musketeer') { // Gun
+                ctx.fillStyle = '#333'; ctx.fillRect(0, -5, 15, 6);
+            }
+            break;
+        case 'giant':
+            ctx.fillStyle = '#e67e22'; 
+            // Simple rect backup for roundRect compatibility
+            ctx.beginPath(); 
+            ctx.rect(-radius, -radius*1.2, radius*2, radius*2.4); 
+            ctx.fill();
+            ctx.fillStyle = cPrimary; ctx.fillRect(-radius, -radius*0.5, radius*2, radius*1.5);
+            break;
+        case 'skeleton':
+        case 'skarmy':
+            ctx.fillStyle = '#fff'; 
+            ctx.beginPath(); ctx.arc(0, -5, 6, 0, Math.PI*2); ctx.fill(); // Head
+            ctx.fillStyle = '#ccc'; 
+            ctx.fillRect(-2, 0, 4, 10); // Body
+            break;
+        case 'baby_dragon':
+            ctx.fillStyle = '#27ae60'; // Green
+            ctx.beginPath(); ctx.ellipse(0, 0, radius, radius*0.8, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#2ecc71'; // Wings
+            ctx.beginPath(); ctx.arc(-15, -10, 8, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(15, -10, 8, 0, Math.PI*2); ctx.fill();
+            break;
+        case 'princess_tower':
+        case 'king_tower':
+            const w = radius * 1.5, h = radius * 2;
+            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-w/2, -h/2, w, h);
+            ctx.fillStyle = cPrimary; ctx.fillRect(-w/2 + 2, -h/2 + 5, w - 4, 10);
+            if(type === 'king_tower') {
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath(); ctx.moveTo(-8, -h/2); ctx.lineTo(0, -h/2-15); ctx.lineTo(8, -h/2); ctx.fill();
+            }
+            break;
+    }
+    ctx.restore();
+}
+
+function drawProjectile(ctx, type, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (type === 'fireball') {
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.5)';
+        ctx.beginPath(); ctx.arc(-5, 0, 6, 0, Math.PI*2); ctx.fill();
+    } else {
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+}
+
+// --- Logic Classes ---
+
+class Entity {
+    constructor(x, y, side, cardKey) {
+        this.x = x; this.y = y; this.side = side;
+        this.cardKey = cardKey;
+        
+        let base = CARDS[cardKey];
+        if(!base && (cardKey === 'princess_tower' || cardKey === 'king_tower')) {
+            this.stats = { 
+                hp: cardKey === 'king_tower' ? 4000 : 2500, 
+                range: 160, attackSpeed: 1000, dmg: 90, 
+                target: 'all', speed: 0, transport: 'building'
+            };
+            this.radius = 30; this.isBuilding = true; // Bigger hitbox for towers
+        } else {
+            const level = playerData.cards[cardKey]?.level || 1;
+            const mult = Math.pow(1.1, level - 1);
+            this.stats = {
+                ...base,
+                hp: Math.floor(base.hp * mult),
+                dmg: Math.floor(base.dmg * mult)
+            };
+            this.radius = 12; this.isBuilding = false; // Standard unit radius
+        }
+        this.hp = this.stats.hp; this.maxHp = this.hp;
+        this.state = 'move'; this.target = null; this.lastAttack = 0;
+        this.pushable = !this.isBuilding; this.id = Math.random();
+    }
+
+    update(dt, now) {
+        if(this.hp <= 0) return false;
+
+        // RETARGETING LOGIC (Bug Fix Here)
+        // 1. Calculate Edge-to-Edge distance (accounting for radii)
+        let distToTarget = this.target ? this.getDist(this.target) - this.radius - this.target.radius : Infinity;
+        
+        // 2. If target is dead, null, OR we are attacking but target moved out of range
+        if(!this.target || this.target.hp <= 0 || (this.state === 'attack' && distToTarget > this.stats.range + 10)) {
+            this.target = this.findTarget();
+            // CRITICAL FIX: If we found a new target, we MUST switch to move state to walk to it.
+            // Previously, it stayed in 'attack' state and instantly hit the new target from across the map.
+            this.state = 'move';
+        }
+
+        if(this.state === 'move') {
+            if(this.target) {
+                distToTarget = this.getDist(this.target) - this.radius - this.target.radius;
+                
+                if(distToTarget <= this.stats.range) {
+                    this.state = 'attack';
+                } else if (this.stats.speed > 0) {
+                    this.move(this.target, dt);
+                }
+            } else {
+                const kingY = this.side === 'blue' ? 50 : 750;
+            }
+        } else if (this.state === 'attack') {
+            // Secondary Safety Check: Don't attack if out of range
+            distToTarget = this.getDist(this.target) - this.radius - this.target.radius;
+            if (distToTarget > this.stats.range + 20) {
+                this.state = 'move';
+                return true;
+            }
+
+            if(now - this.lastAttack > this.stats.attackSpeed) {
+                this.lastAttack = now;
+                if(this.stats.range > 50 || this.stats.transport === 'air') {
+                    game.projectiles.push(new Projectile(this.x, this.y, this.target, this.stats.dmg, this.side, this.stats.splash));
+                } else {
+                    this.target.takeDamage(this.stats.dmg);
+                }
+            }
+        }
+        return true;
+    }
+
+    getDist(target) { return Math.hypot(target.x - this.x, target.y - this.y); }
+
+    findTarget() {
+        let enemies = game.entities.filter(e => e.side !== this.side && e.hp > 0);
+        if(this.stats.target === 'ground') enemies = enemies.filter(e => e.stats.transport !== 'air');
+        if(this.stats.target === 'building') enemies = enemies.filter(e => e.isBuilding);
+        return this.getClosest(enemies);
+    }
+
+    getClosest(list) {
+        let closest = null, min = Infinity;
+        for(let e of list) {
+            let d = this.getDist(e);
+            if(d < min) { min = d; closest = e; }
+        }
+        return closest;
+    }
+
+    move(target, dt) {
+        let tx = target.x, ty = target.y;
+        if(this.stats.transport === 'ground') {
+            const onTop = this.y < BRIDGE_Y;
+            const targetOnTop = ty < BRIDGE_Y;
+            
+            if(onTop !== targetOnTop) { 
+                const onBridge = Math.abs(this.y - BRIDGE_Y) < 50;
+                if(!onBridge) {
+                    const bLeft = 110, bRight = 390;
+                    tx = Math.abs(this.x - bLeft) < Math.abs(this.x - bRight) ? bLeft : bRight;
+                    ty = BRIDGE_Y;
+                }
+            }
+        }
+        const dx = tx - this.x;
+        const dy = ty - this.y;
+        const dist = Math.hypot(dx, dy);
+        if(dist > 0) {
+            this.x += (dx/dist) * this.stats.speed;
+            this.y += (dy/dist) * this.stats.speed;
+        }
+
+        // Separation
+        if(this.pushable) {
+            for(let other of game.entities) {
+                if(other !== this && other.pushable && other.stats.transport === this.stats.transport) {
+                   if(Math.abs(this.x - other.x) < 20 && Math.abs(this.y - other.y) < 20) {
+                        const pushAngle = Math.atan2(this.y - other.y, this.x - other.x);
+                        this.x += Math.cos(pushAngle) * 0.5;
+                        this.y += Math.sin(pushAngle) * 0.5;
+                   }
+                }
+            }
+        }
+    }
+
+    takeDamage(amt) {
+        this.hp -= amt;
+        game.effects.push({ x: this.x, y: this.y - 30, txt: Math.floor(amt), life: 1.0 });
+    }
+}
+
+class Projectile {
+    constructor(x, y, target, dmg, side, splash = 0) {
+        this.x = x; this.y = y; this.target = target;
+        this.dmg = dmg; this.side = side; this.active = true; this.splash = splash;
+        this.tx = target.x; this.ty = target.y; 
+    }
+    update() {
+        const tx = this.splash > 0 ? this.tx : (this.target.active !== false ? this.target.x : this.tx);
+        const ty = this.splash > 0 ? this.ty : (this.target.active !== false ? this.target.y : this.ty);
+
+        const dist = Math.hypot(tx - this.x, ty - this.y);
+        
+        // Overshoot fix: If very close, assume hit
+        if(dist < 12) {
+            this.active = false;
+            if(this.splash > 0) {
+                game.entities.forEach(e => {
+                    if(e.side !== this.side && Math.hypot(e.x - this.x, e.y - this.y) < this.splash) {
+                        e.takeDamage(this.dmg);
+                    }
+                });
+                game.effects.push({x: this.x, y: this.y, type:'spell_vis', radius: this.splash, life: 0.3});
+            } else {
+                if(this.target && this.target.hp > 0) this.target.takeDamage(this.dmg);
+            }
+        } else {
+            const angle = Math.atan2(ty - this.y, tx - this.x);
+            this.x += Math.cos(angle) * 8;
+            this.y += Math.sin(angle) * 8;
+        }
+        return this.active;
+    }
+}
+
+// --- Main System ---
+
+function init() {
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    
+    // Load Save
+    const save = localStorage.getItem('clashCloneSave');
+    if(save) {
+        try {
+            const parsed = JSON.parse(save);
+            playerData = { ...playerData, ...parsed };
+        } catch(e) {}
+    }
+
+    renderShop();
+    renderDeck();
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    requestAnimationFrame(loop);
+}
+
+function toggleRotation() {
+    if (manualLandscape === null) {
+        manualLandscape = !isLandscape; // Switch to opposite of current detection
+    } else {
+        manualLandscape = !manualLandscape; // Toggle forced state
+    }
+    handleResize();
+}
+
+function handleResize() {
+    const vp = document.getElementById('viewport');
+    let useLandscape = false;
+    
+    if (manualLandscape !== null) {
+        useLandscape = manualLandscape;
+    } else {
+        // Auto-detect
+        useLandscape = (window.innerWidth > 800 && window.innerHeight > 500);
+    }
+    
+    if(useLandscape) {
+        isLandscape = true;
+        vp.classList.add('desktop-mode');
+        // Visual resolution in Desktop mode
+        canvas.width = 800; 
+        canvas.height = 500;
+    } else {
+        isLandscape = false;
+        vp.classList.remove('desktop-mode');
+        canvas.width = 500;
+        canvas.height = 800;
+    }
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.menu-content').forEach(e => e.style.display = 'none');
+    document.getElementById(`tab-${tab}`).style.display = 'block';
+    document.querySelectorAll('.menu-nav button').forEach(e => e.classList.remove('active'));
+    document.getElementById(`nav-${tab}`).classList.add('active');
+}
+
+// --- SHOP & MENU ---
+
+function claimDaily() {
+    const now = Date.now();
+    if(now - playerData.lastDaily > 86400000) { // 24hr
+        playerData.gold += 100;
+        playerData.lastDaily = now;
+        alert("Claimed 100 Gold!");
+        saveGame();
+        renderShop();
+        document.getElementById('menu-gold').innerText = playerData.gold;
+    } else {
+        const left = Math.ceil((86400000 - (now - playerData.lastDaily)) / 3600000);
+        alert(`Come back in ${left} hours.`);
+    }
+}
+
+function renderShop() {
+    const grid = document.getElementById('shop-grid');
+    const dailyDiv = document.getElementById('daily-gift-container');
+    const now = Date.now();
+    const diff = now - playerData.lastDaily;
+    const isAvailable = diff > 86400000;
+    
+    let btnText = "CLAIM";
+    let btnDisabled = "";
+    let btnClass = "btn-action buy";
+    
+    if(!isAvailable) {
+        const left = Math.ceil((86400000 - diff) / 3600000);
+        btnText = `Claimed (Wait ${left}h)`;
+        btnDisabled = "disabled";
+        btnClass = "btn-action";
+    }
+    
+    dailyDiv.innerHTML = `
+        <h3 style="color:#ffd700">Free Gift</h3>
+        <p>100 Gold</p>
+        <button id="btn-daily" class="${btnClass}" onclick="claimDaily()" ${btnDisabled}>${btnText}</button>
+    `;
+
+    grid.innerHTML = '';
+    const shopCards = ['knight', 'musketeer', 'baby_dragon']; 
+    shopCards.forEach(key => {
+        const el = document.createElement('div');
+        el.className = 'menu-card';
+        el.innerHTML = `
+            <div style="font-weight:bold; color:${CARDS[key].color}">${CARDS[key].name}</div>
+            <div style="font-size:30px">📦</div>
+            <div style="font-size:12px">x10 Cards</div>
+            <button class="btn-action buy" onclick="buyCard('${key}', 100)">100 G</button>
+        `;
+        grid.appendChild(el);
+    });
+}
+
+function buyCard(key, cost) {
+    if(playerData.gold >= cost) {
+        playerData.gold -= cost;
+        playerData.cards[key].count += 10;
+        document.getElementById('menu-gold').innerText = playerData.gold;
+        saveGame();
+        alert(`Bought 10 ${CARDS[key].name}!`);
+    } else {
+        alert("Not enough gold!");
+    }
+}
+
+function renderDeck() {
+    document.getElementById('menu-gold').innerText = playerData.gold;
+    const grid = document.getElementById('deck-grid');
+    grid.innerHTML = '';
+
+    playerData.deck.forEach(key => {
+        const data = playerData.cards[key];
+        const cost = data.level * 50;
+        const el = document.createElement('div');
+        el.className = 'menu-card';
+        el.innerHTML = `
+            <div style="font-weight:bold; color:${CARDS[key].color}">${CARDS[key].name}</div>
+            <div style="font-size: 10px;">Lvl ${data.level}</div>
+            <canvas width="50" height="50" id="cvs-${key}"></canvas>
+            <button class="btn-action" onclick="upgradeCard('${key}')" ${playerData.gold < cost ? 'disabled' : ''}>
+                UPG (${cost})
+            </button>
+        `;
+        grid.appendChild(el);
+        setTimeout(() => {
+            const c = document.getElementById(`cvs-${key}`);
+            if(c) drawUnitModel(c.getContext('2d'), key, 25, 25, 12, 'blue', true);
+        }, 10);
+    });
+}
+
+function upgradeCard(key) {
+    const data = playerData.cards[key];
+    const cost = data.level * 50;
+    if(playerData.gold >= cost) {
+        playerData.gold -= cost;
+        data.level++;
+        saveGame();
+        renderDeck();
+    }
+}
+
+function saveGame() { localStorage.setItem('clashCloneSave', JSON.stringify(playerData)); }
+
+// --- GAMEPLAY ---
+
+function startGame() {
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-ui').style.display = 'flex'; 
+    document.getElementById('msg-overlay').style.display = 'none';
+
+    game.active = true;
+    game.entities = [];
+    game.projectiles = [];
+    game.effects = [];
+    game.time = 180;
+    game.lastTime = performance.now();
+    
+    // Setup Player
+    game.player.elixir = 5;
+    game.player.cycle = [...playerData.deck].sort(() => Math.random() - 0.5);
+    game.player.hand = [];
+    for(let i=0; i<4; i++) game.player.hand.push(game.player.cycle.pop());
+    
+    // Setup AI
+    game.ai.elixir = 5;
+    const aiKeys = [...ALL_KEYS].sort(()=>Math.random()-.5).slice(0, 8);
+    game.ai.cycle = aiKeys;
+    game.ai.hand = [];
+    for(let i=0; i<4; i++) game.ai.hand.push(game.ai.cycle.pop());
+    game.ai.timer = performance.now() + 2000;
+
+    spawnTowers('blue');
+    spawnTowers('red');
+    
+    renderHandUI();
+    
+    // Input Listeners
+    canvas.onmousedown = onInputStart;
+    canvas.onmousemove = onInputMove;
+    canvas.onmouseup = onInputEnd;
+    canvas.ontouchstart = (e) => { e.preventDefault(); onInputStart(e); };
+    canvas.ontouchmove = (e) => { e.preventDefault(); onInputMove(e); };
+    canvas.ontouchend = (e) => { e.preventDefault(); onInputEnd(e); };
+}
+
+function returnToMenu() {
+    game.active = false;
+    document.getElementById('game-ui').style.display = 'none';
+    document.getElementById('msg-overlay').style.display = 'none';
+    document.getElementById('main-menu').style.display = 'flex';
+    renderDeck();
+}
+
+function spawnTowers(side) {
+    const yBase = side === 'blue' ? 700 : 100; 
+    const yKing = side === 'blue' ? 750 : 50;
+    
+    game.entities.push(new Entity(100, yBase, side, 'princess_tower'));
+    game.entities.push(new Entity(400, yBase, side, 'princess_tower'));
+    game.entities.push(new Entity(250, yKing, side, 'king_tower'));
+}
+
+// --- LOOP ---
+
+function loop(now) {
+    requestAnimationFrame(loop);
+    if(!game.active) return;
+    
+    const dt = (now - game.lastTime) / 1000;
+    game.lastTime = now;
+
+    updateGameLogic(dt, now);
+    renderScene();
+}
+
+function updateGameLogic(dt, now) {
+    if(game.player.elixir < 10) game.player.elixir += dt * 0.45;
+    if(game.ai.elixir < 10) game.ai.elixir += dt * 0.45;
+    
+    if(Math.floor(now/1000) > Math.floor((now-dt*1000)/1000)) {
+        game.time--;
+        let m = Math.floor(game.time / 60);
+        let s = game.time % 60;
+        document.getElementById('timer').innerText = `${m}:${s<10?'0'+s:s}`;
+        document.getElementById('elixir-fill').style.width = (game.player.elixir*10) + '%';
+        document.getElementById('elixir-val').innerText = Math.floor(game.player.elixir);
+        if(game.time <= 0) endGame('draw');
+    }
+
+    game.entities = game.entities.filter(e => e.update(dt, now));
+    game.entities.sort((a,b) => a.y - b.y);
+
+    game.projectiles = game.projectiles.filter(p => p.update());
+    
+    game.effects = game.effects.filter(e => {
+        e.life -= dt;
+        if(e.type !== 'spell_vis') e.y -= 20 * dt;
+        return e.life > 0;
+    });
+
+    updateAI(now);
+
+    const blueKing = game.entities.find(e => e.side === 'blue' && e.cardKey === 'king_tower');
+    const redKing = game.entities.find(e => e.side === 'red' && e.cardKey === 'king_tower');
+    if(!blueKing) endGame('red');
+    if(!redKing) endGame('blue');
+}
+
+function updateAI(now) {
+    if(now < game.ai.timer) return;
+    const threats = game.entities.filter(e => e.side === 'blue' && e.y < 400);
+    let defenseNeeded = threats.length > 0;
+
+    if(game.ai.elixir > 4) {
+        let cardToPlay = null;
+        let playX = 0, playY = 0;
+
+        if(defenseNeeded) {
+            cardToPlay = game.ai.hand.find(k => CARDS[k].cost <= 4 && CARDS[k].type === 'troop');
+            if(cardToPlay) {
+                playX = threats[0].x + (Math.random()*40 - 20);
+                playY = threats[0].y - 50; 
+            }
+        } else if(game.ai.elixir > 8) {
+            cardToPlay = game.ai.hand.find(k => k === 'giant') || game.ai.hand[0];
+            playX = Math.random() > 0.5 ? 100 : 400;
+            playY = 100;
+        }
+
+        if(cardToPlay && game.ai.elixir >= CARDS[cardToPlay].cost) {
+            playCard('red', cardToPlay, playX, playY);
+            const idx = game.ai.hand.indexOf(cardToPlay);
+            game.ai.hand.splice(idx, 1);
+            if(game.ai.cycle.length === 0) game.ai.cycle = [...ALL_KEYS].slice(0,8).sort(()=>Math.random()-.5);
+            game.ai.hand.push(game.ai.cycle.pop());
+            game.ai.timer = now + 2500; // Increased delay slightly
+        } else {
+            game.ai.timer = now + 1000;
+        }
+    }
+}
+
+function playCard(side, key, x, y) {
+    const card = CARDS[key];
+    const user = side === 'blue' ? game.player : game.ai;
+    user.elixir -= card.cost;
+
+    if(card.type === 'spell') {
+        game.effects.push({ x, y, life: 0.5, type: 'spell_vis', radius: card.radius });
+        setTimeout(() => {
+            game.entities.forEach(e => {
+                if(e.side !== side && Math.hypot(e.x - x, e.y - y) < card.radius) {
+                    e.takeDamage(card.dmg);
+                }
+            });
+        }, card.delay);
+    } else {
+        const count = card.count || 1;
+        for(let i=0; i<count; i++) {
+            const ox = (Math.random() * 30) - 15;
+            const oy = (Math.random() * 30) - 15;
+            game.entities.push(new Entity(x + ox, y + oy, side, key));
+        }
+    }
+}
+
+function endGame(winner) {
+    game.active = false;
+    const ov = document.getElementById('msg-overlay');
+    ov.style.display = 'flex';
+    const title = document.getElementById('msg-title');
+    
+    if(winner === 'blue') {
+        title.innerText = "VICTORY!";
+        title.style.color = '#ffd700';
+        playerData.gold += 50;
+    } else {
+        title.innerText = "DEFEAT";
+        title.style.color = '#ff6b6b';
+        playerData.gold += 10; 
+    }
+    saveGame();
+}
+
+// --- RENDERER (Cleaned up for Landscape) ---
+
+// Helpers for coordinate mapping
+function mapX(x, y) {
+    if(!isLandscape) return x;
+    return 800 - y; // Logic Y=800 -> Vis X=0 (Left). Logic Y=0 -> Vis X=800 (Right)
+}
+
+function mapY(x, y) {
+    if(!isLandscape) return y;
+    return x; // Logic X -> Vis Y
+}
+
+function renderScene() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw Background
+    if(isLandscape) {
+        // Landscape: River vertical, Bridges horizontal
+        ctx.fillStyle = COLORS.river;
+        ctx.fillRect(400 - 20, 0, 40, 500); // Center river
+        
+        ctx.fillStyle = COLORS.bridge;
+        ctx.fillRect(400 - 25, 110, 50, 60); // Top Bridge (Left lane logic)
+        ctx.fillRect(400 - 25, 390, 50, 60); // Bottom Bridge (Right lane logic)
+    } else {
+        // Portrait
+        ctx.fillStyle = COLORS.river;
+        ctx.fillRect(0, BRIDGE_Y - 20, 500, 40);
+        ctx.fillStyle = COLORS.bridge;
+        ctx.fillRect(110, BRIDGE_Y - 25, 60, 50);
+        ctx.fillRect(390, BRIDGE_Y - 25, 60, 50);
+    }
+
+    // Entities
+    game.entities.forEach(e => {
+        let dx = mapX(e.x, e.y);
+        let dy = mapY(e.x, e.y);
+        drawUnitModel(ctx, e.cardKey||(e.isBuilding?(e.stats.hp>2600?'king_tower':'princess_tower'):'unknown'), dx, dy, e.radius, e.side);
+        
+        // HP Bar
+        const pct = Math.max(0, e.hp / e.maxHp);
+        ctx.fillStyle = '#000'; ctx.fillRect(dx - 15, dy - 30, 30, 4);
+        ctx.fillStyle = e.side === 'blue' ? '#4ecdc4' : '#ff6b6b'; ctx.fillRect(dx - 15, dy - 30, 30 * pct, 4);
+    });
+    
+    // Projectiles
+    game.projectiles.forEach(p => {
+        let px = mapX(p.x, p.y);
+        let py = mapY(p.x, p.y);
+        drawProjectile(ctx, 'arrow', px, py);
+    });
+    
+    // Effects
+    ctx.font = 'bold 20px Roboto';
+    game.effects.forEach(e => {
+        let ex = mapX(e.x, e.y);
+        let ey = mapY(e.x, e.y);
+        
+        if(e.type === 'spell_vis') {
+            ctx.fillStyle = 'rgba(255, 200, 0, 0.4)';
+            ctx.beginPath(); ctx.arc(ex, ey, e.radius, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+            ctx.strokeText(e.txt, ex, ey); ctx.fillText(e.txt, ex, ey);
+        }
+    });
+    
+    // Drag Preview
+    if(input.down && input.selectedIdx !== -1) {
+        const key = game.player.hand[input.selectedIdx];
+        const card = CARDS[key];
+        // Input logic coords need mapping to visual for drawing
+        let dx = mapX(input.x, input.y);
+        let dy = mapY(input.x, input.y);
+
+        ctx.globalAlpha = 0.5;
+        if(card.type === 'spell') {
+            ctx.fillStyle = '#f39c12'; ctx.beginPath(); ctx.arc(dx, dy, card.radius, 0, Math.PI*2); ctx.fill();
+        } else {
+            drawUnitModel(ctx, key, dx, dy, 15, 'blue');
+        }
+        
+        // Ring
+        const valid = isValidPlacement(input.x, input.y, 'blue', card);
+        ctx.strokeStyle = valid ? '#2ecc71' : '#e74c3c';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(dx, dy, 20, 0, Math.PI*2); ctx.stroke();
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+
+// --- INPUT SYSTEM ---
+
+function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const rawX = (cx - rect.left);
+    const rawY = (cy - rect.top);
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    let finalX = rawX * scaleX;
+    let finalY = rawY * scaleY;
+    
+    if(isLandscape) {
+        // Inverse Mapping of mapX/mapY
+        // mapX = 800 - y  =>  y = 800 - mapX
+        // mapY = x        =>  x = mapY
+        const logicX = finalY;
+        const logicY = 800 - finalX;
+        return { x: logicX, y: logicY };
+    }
+    
+    return { x: finalX, y: finalY };
+}
+
+function renderHandUI() {
+    const div = document.getElementById('hand-container');
+    div.innerHTML = '';
+    game.player.hand.forEach((key, i) => {
+        const c = CARDS[key];
+        const el = document.createElement('div');
+        el.className = `card-slot ${game.player.elixir < c.cost ? 'disabled' : ''} ${input.selectedIdx === i ? 'selected' : ''}`;
+        el.innerHTML = `
+            <div class="card-cost">${c.cost}</div>
+            <canvas class="card-preview-canvas" id="h-cvs-${i}"></canvas>
+            <div class="card-name">${c.name}</div>
+        `;
+        el.onmousedown = (e) => selectCard(i, e); 
+        el.ontouchstart = (e) => selectCard(i, e);
+        div.appendChild(el);
+        setTimeout(() => {
+            const cvs = document.getElementById(`h-cvs-${i}`);
+            if(cvs) { cvs.width=70; cvs.height=60; drawUnitModel(cvs.getContext('2d'), key, 35, 30, 12, 'blue', true); }
+        }, 0);
+    });
+}
+
+function selectCard(idx, e) {
+    if(e) e.stopPropagation();
+    if(game.player.elixir >= CARDS[game.player.hand[idx]].cost) {
+        input.selectedIdx = idx;
+        renderHandUI();
+    }
+}
+
+function onInputStart(e) {
+    if(input.selectedIdx === -1) return;
+    input.down = true;
+    const p = getPos(e);
+    input.x = p.x; input.y = p.y;
+}
+function onInputMove(e) {
+    if(!input.down) return;
+    const p = getPos(e);
+    input.x = p.x; input.y = p.y;
+}
+function onInputEnd(e) {
+    if(input.selectedIdx !== -1 && input.down) {
+        const key = game.player.hand[input.selectedIdx];
+        if(isValidPlacement(input.x, input.y, 'blue', CARDS[key])) {
+            playCard('blue', key, input.x, input.y);
+            game.player.hand.splice(input.selectedIdx, 1);
+            if(game.player.cycle.length === 0) game.player.cycle = [...playerData.deck].sort(()=>Math.random()-.5);
+            game.player.hand.push(game.player.cycle.pop());
+            input.selectedIdx = -1;
+            renderHandUI();
+        }
+    }
+    input.down = false;
+}
+
+// Advanced Placement Logic
+function isValidPlacement(x, y, side, card) {
+    if(card.type === 'spell') return true;
+    
+    // Check Dead Towers
+    const redLeft = game.entities.find(e => e.side === 'red' && e.x < 250 && e.isBuilding); // Logic X<250 is Left
+    const redRight = game.entities.find(e => e.side === 'red' && e.x > 250 && e.isBuilding);
+    
+    // Logic: Blue Base is Y=800. Bridge=400. Red Base=0.
+    if(side === 'blue') {
+        if(!redLeft && x < 250) return y > 150; // Can place deep in left lane
+        if(!redRight && x > 250) return y > 150; // Can place deep in right lane
+        return y > BRIDGE_Y;
+    }
+    return y < BRIDGE_Y;
+}
+
+// Boot
+init();
+
+</script>
+</body>
+</html>
