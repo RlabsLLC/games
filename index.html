@@ -3,20 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V I B E // H U B</title>
+    <title>V I B E // H U B v1.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* --- WebV2.7o1.5 DESIGN SYSTEM --- */
+        /* --- WebV2.7o1.8 DESIGN SYSTEM --- */
         :root {
-            --bg-deep: #030303;
-            --bg-panel: rgba(20, 20, 20, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --neon-cyan: #00f3ff;
-            --neon-purple: #bc13fe;
-            --neon-green: #0aff68;
-            --neon-orange: #ffaa00; /* New Game Color */
+            /* Default Theme: Cyber */
+            --bg-deep: #050505;
+            --bg-panel: rgba(20, 20, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            
+            /* Dynamic Variables */
+            --primary-neon: #00f3ff; /* Cyan */
+            --secondary-neon: #bc13fe; /* Purple */
+            
             --text-main: #eeeeee;
-            --text-dim: #666666;
+            --text-dim: #888888;
             --font-mono: 'Courier New', Courier, monospace; 
         }
 
@@ -24,11 +26,12 @@
             background-color: var(--bg-deep);
             color: var(--text-main);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow-x: hidden; /* Prevent horizontal scroll, allow vertical */
+            overflow-x: hidden;
             min-height: 100vh;
+            transition: background-color 0.5s ease;
         }
 
-        /* Scanline Overlay for Retro Vibe */
+        /* Scanline Overlay */
         .scanlines {
             position: fixed;
             top: 0;
@@ -42,22 +45,23 @@
             opacity: 0.3;
         }
 
-        /* --- UTILITIES --- */
+        /* Glass Panel */
         .glass-panel {
             background: var(--bg-panel);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
         }
 
-        .text-glow-cyan { text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
-        .text-glow-purple { text-shadow: 0 0 10px rgba(188, 19, 254, 0.5); }
+        .text-glow { text-shadow: 0 0 15px var(--primary-neon); }
         
+        /* Buttons */
         .btn-vibe {
             background: transparent;
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
+            border: 1px solid var(--primary-neon);
+            color: var(--primary-neon);
             transition: all 0.2s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -67,25 +71,84 @@
         }
 
         .btn-vibe:hover {
-            background: var(--neon-cyan);
+            background: var(--primary-neon);
             color: #000;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+            box-shadow: 0 0 25px var(--primary-neon);
         }
 
-        .btn-vibe:active {
-            transform: scale(0.98);
+        .btn-vibe:active { transform: scale(0.98); }
+
+        /* Glitch Effect on Hover */
+        .glitch-hover:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: var(--primary-neon);
         }
 
-        /* --- ANIMATIONS --- */
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
         }
 
-        .floating { animation: float 6s ease-in-out infinite; }
+        /* --- v1.8 ENTRANCE ANIMATIONS --- */
 
-        /* --- LAYOUT --- */
+        /* 1. Header Slide Down */
+        .anim-slide-down {
+            animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        @keyframes slideDown {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 2. Text Fly In (Per Word) */
+        .anim-word {
+            display: inline-block;
+            opacity: 0;
+            animation: flyInBottom 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform: translateY(40px);
+        }
+        @keyframes flyInBottom {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 3. Card Pop In */
+        .anim-pop-in {
+            opacity: 0;
+            animation: popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform: scale(0.9) translateY(20px);
+        }
+        @keyframes popIn {
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* 4. Living Gradient Text */
+        .anim-gradient-text {
+            background-size: 200% auto;
+            animation: gradientFlow 3s linear infinite, flyInBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; /* Starts hidden for the fly-in */
+            transform: translateY(40px);
+        }
+        @keyframes gradientFlow {
+            0% { background-position: 0% center; }
+            50% { background-position: 100% center; }
+            100% { background-position: 0% center; }
+        }
+
+        /* Stagger Delays */
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+        .delay-600 { animation-delay: 0.6s; }
+
+
+        /* Layout */
         #app-container {
             position: relative;
             z-index: 10;
@@ -94,17 +157,16 @@
             flex-direction: column;
         }
 
-        /* --- GAME OVERLAY --- */
         #game-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(8px);
             z-index: 100;
-            display: none; /* Hidden by default */
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -116,10 +178,21 @@
             display: flex;
             opacity: 1;
         }
+
+        /* Color Swatches */
+        .theme-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .theme-dot:hover { transform: scale(1.2); }
         
     </style>
 </head>
-<body class="selection:bg-cyan-500 selection:text-black">
+<body class="selection:bg-white selection:text-black">
 
     <!-- CANVAS BACKGROUND -->
     <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full z-0 opacity-40"></canvas>
@@ -127,24 +200,33 @@
 
     <div id="app-container" class="p-6">
         
-        <!-- HEADER -->
-        <header class="w-full max-w-6xl mx-auto flex justify-between items-center mb-12 border-b border-white/10 pb-6">
+        <!-- HEADER (Slide Down Animation) -->
+        <header class="anim-slide-down w-full max-w-6xl mx-auto flex justify-between items-center mb-12 border-b border-white/10 pb-6 relative">
             <div>
-                <h1 class="text-4xl font-bold tracking-widest text-glow-cyan">VIBE // HUB</h1>
+                <h1 class="text-4xl font-bold tracking-widest text-glow glitch-hover cursor-default transition-colors duration-500" style="color: var(--primary-neon)">VIBE // HUB</h1>
                 <p class="text-xs text-gray-500 mt-1 font-mono tracking-wider">Games on GitHub</p>
             </div>
-            <div class="flex gap-4 items-center">
-                <!-- NEW GAME TAB - Opens Overlay -->
+            
+            <div class="flex gap-6 items-center">
+                <!-- VIBE TUNER (THEME SWITCHER) -->
+                <div class="hidden md:flex gap-2 items-center mr-4 border-r border-white/10 pr-6">
+                    <span class="text-[10px] text-gray-500 font-mono">VIBE TUNER:</span>
+                    <div onclick="setTheme('cyber')" class="theme-dot bg-[#00f3ff] shadow-[0_0_10px_#00f3ff]"></div>
+                    <div onclick="setTheme('matrix')" class="theme-dot bg-[#0aff68] shadow-[0_0_10px_#0aff68]"></div>
+                    <div onclick="setTheme('sunset')" class="theme-dot bg-[#ffaa00] shadow-[0_0_10px_#ffaa00]"></div>
+                    <div onclick="setTheme('royal')" class="theme-dot bg-[#bc13fe] shadow-[0_0_10px_#bc13fe]"></div>
+                </div>
+
                 <button onclick="openGame('webgl')"
-                   class="text-xs text-gray-400 hover:text-orange-400 transition font-mono whitespace-nowrap uppercase cursor-pointer bg-transparent border-none"
-                   onmouseenter="this.innerText='[ NO DOWNLOAD!! ]'" 
-                   onmouseleave="this.innerText='[ GAME NOW! ]'">
+                   class="text-xs text-gray-400 hover:text-white transition font-mono whitespace-nowrap uppercase cursor-pointer bg-transparent border-none"
+                   onmouseenter="this.innerText='[ NO DOWNLOAD!! ]'; this.style.color='var(--primary-neon)'" 
+                   onmouseleave="this.innerText='[ GAME NOW! ]'; this.style.color='#9ca3af'">
                    [ GAME NOW! ]
                 </button>
                 
                 <span class="text-gray-700">|</span>
 
-                <a href="https://github.com/RlabsLLC/Games" target="_blank" class="text-xs text-gray-400 hover:text-cyan-400 transition font-mono">[ GITHUB ]</a>
+                <a href="https://github.com/RlabsLLC/Games" target="_blank" class="text-xs text-gray-400 hover:text-white transition font-mono">[ GITHUB ]</a>
             </div>
         </header>
 
@@ -153,106 +235,121 @@
             
             <!-- HERO HEADER -->
             <div class="col-span-1 md:col-span-2 lg:col-span-3 text-center py-8 mb-4">
-                <h2 class="text-5xl md:text-7xl font-black text-white tracking-tight leading-tight uppercase" style="text-shadow: 0 0 30px rgba(255,255,255,0.1);">
-                    No B.S. <br class="md:hidden" /> <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-500">Just Games</span>
+                <h2 class="text-5xl md:text-7xl font-black text-white tracking-tight leading-tight uppercase" style="text-shadow: 0 0 30px rgba(255,255,255,0.05);">
+                    <!-- Broken into spans for per-word animation -->
+                    <span class="anim-word delay-100">No</span> 
+                    <span class="anim-word delay-200">B.S.</span> 
+                    <br class="md:hidden" /> 
+                    <!-- Gradient Text with animation -->
+                    <span class="text-transparent bg-clip-text anim-gradient-text delay-300 inline-block" 
+                          style="background-image: linear-gradient(to right, var(--primary-neon), var(--secondary-neon), var(--primary-neon));">
+                        Just Games
+                    </span>
                 </h2>
-                <!-- RANDOM SUBHEADER -->
-                <p id="random-quote" class="mt-4 text-cyan-400 font-mono text-sm md:text-base tracking-widest opacity-80 min-h-[1.5em] animate-pulse">
+                <!-- RANDOM SUBHEADER (Fade in last) -->
+                <p id="random-quote" class="mt-4 font-mono text-sm md:text-base tracking-widest opacity-0 min-h-[1.5em] animate-pulse anim-pop-in delay-500" style="color: var(--primary-neon)">
                     <!-- Javascript will inject text here -->
                 </p>
             </div>
 
-            <!-- CARD 1: WEB GAMES CATEGORY -->
-            <div class="glass-panel p-8 rounded-xl flex flex-col justify-between hover:translate-y-[-5px] transition duration-300 border-l-4 border-l-orange-500 group">
+            <!-- CARD 1: WEB GAMES CATEGORY (Staggered Entry) -->
+            <div class="glass-panel p-8 rounded-xl flex flex-col justify-between hover:translate-y-[-5px] transition duration-300 border-l-4 group anim-pop-in delay-400" style="border-color: var(--secondary-neon)">
                 <div>
                     <div class="flex justify-between items-start mb-4">
-                        <h2 class="text-2xl font-bold text-white group-hover:text-orange-400 transition">Web Games</h2>
-                        <span class="text-xs border border-orange-500/30 text-orange-500 px-2 py-1 rounded">BROWSER</span>
+                        <h2 class="text-2xl font-bold text-white transition duration-300" 
+                            onmouseover="this.style.color='var(--secondary-neon)'" 
+                            onmouseout="this.style.color='white'">
+                            Web Games
+                        </h2>
+                        <span class="text-xs border px-2 py-1 rounded" style="border-color: rgba(255,255,255,0.2); color: var(--secondary-neon)">BROWSER</span>
                     </div>
                     <p class="text-gray-400 text-sm leading-relaxed mb-6">
                         Instant play. No downloads required. Access the library of WebGL and HTML5 experiences.
                     </p>
                 </div>
-                <button onclick="openGame('webgl')" class="btn-vibe w-full py-3 rounded text-sm font-bold" style="border-color: var(--neon-orange); color: var(--neon-orange)">OPEN CONSOLE</button>
+                <button onclick="openGame('webgl')" class="btn-vibe w-full py-3 rounded text-sm font-bold" style="border-color: var(--secondary-neon); color: var(--secondary-neon)">OPEN CONSOLE</button>
             </div>
 
-            <!-- CARD 2: SYSTEM GUIDE -->
-            <div class="glass-panel p-8 rounded-xl flex flex-col justify-between hover:translate-y-[-5px] transition duration-300 border-l-4 border-l-green-500 group">
+            <!-- CARD 2: SYSTEM GUIDE (Staggered Entry) -->
+            <div class="glass-panel p-8 rounded-xl flex flex-col justify-between hover:translate-y-[-5px] transition duration-300 border-l-4 group anim-pop-in delay-500" style="border-color: var(--primary-neon)">
                 <div>
                     <div class="flex justify-between items-start mb-4">
-                        <h2 class="text-2xl font-bold text-white group-hover:text-green-400 transition">System Guide</h2>
-                        <span class="text-xs border border-green-500/30 text-green-500 px-2 py-1 rounded">INFO</span>
+                        <h2 class="text-2xl font-bold text-white transition duration-300"
+                            onmouseover="this.style.color='var(--primary-neon)'" 
+                            onmouseout="this.style.color='white'">
+                            System Guide
+                        </h2>
+                        <span class="text-xs border px-2 py-1 rounded" style="border-color: rgba(255,255,255,0.2); color: var(--primary-neon)">INFO</span>
                     </div>
                     <p class="text-gray-400 text-sm leading-relaxed mb-6">
                         Access the game archives on the GitHub repository. View instructions for downloading and running .html game files.
                     </p>
                 </div>
-                <button onclick="openGame('guide')" class="btn-vibe w-full py-3 rounded text-sm font-bold" style="border-color: var(--neon-green); color: var(--neon-green)">Access Data</button>
+                <button onclick="openGame('guide')" class="btn-vibe w-full py-3 rounded text-sm font-bold" style="border-color: var(--primary-neon); color: var(--primary-neon)">Access Data</button>
             </div>
 
         </main>
 
         <!-- FOOTER -->
-        <footer class="text-center text-gray-600 text-xs py-6 font-mono">
-            WebV2.7o1.5 DESIGN LANGUAGE // END OF LINE
+        <footer class="text-center text-gray-600 text-xs py-6 font-mono anim-pop-in delay-600">
+            WebV2.7o1.8 // RlabsLLC // END OF LINE
         </footer>
     </div>
 
     <!-- === GAME OVERLAYS === -->
     
-    <!-- OVERLAY CONTAINER -->
     <div id="game-overlay">
         <button onclick="closeGame()" class="absolute top-8 right-8 text-white hover:text-red-500 text-xl font-mono z-50">[ CLOSE TERMINAL ]</button>
         
         <!-- WEB GAMES OVERLAY -->
         <div id="game-webgl" class="game-content hidden flex-col items-center w-full max-w-5xl h-[80vh] glass-panel p-10 rounded-xl overflow-y-auto">
-            <h2 class="text-3xl font-mono text-orange-400 mb-2 tracking-widest w-full text-center">GAME_CONSOLE // WEBGL</h2>
+            <h2 class="text-3xl font-mono mb-2 tracking-widest w-full text-center" style="color: var(--primary-neon)">GAME_CONSOLE // WEBGL</h2>
             <p class="text-xs text-gray-500 font-mono mb-8">STATUS: ONLINE // NO_DOWNLOAD_REQUIRED</p>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
                 <!-- ECHOHILL RACER CARD -->
-                <div class="border border-white/10 bg-black/40 p-6 rounded-lg hover:border-orange-500 transition duration-300 flex flex-col justify-between">
+                <div class="border border-white/10 bg-black/40 p-6 rounded-lg transition duration-300 flex flex-col justify-between hover:border-[var(--primary-neon)]" onmouseover="this.style.borderColor='var(--primary-neon)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
                     <div>
                         <h3 class="text-xl font-bold text-white mb-2">EchoHill Racer 3D</h3>
-                        <div class="h-1 w-12 bg-orange-500 mb-4"></div>
+                        <div class="h-1 w-12 mb-4" style="background-color: var(--primary-neon)"></div>
                         <p class="text-gray-400 text-sm mb-6">
                             High-fidelity 3D drifting physics running directly in your browser. Experience the hills without the install.
                         </p>
                     </div>
-                    <a href="https://rlabsllc.github.io/games/hillrider" target="_blank" class="inline-block w-full py-3 text-center bg-orange-500 text-black font-bold hover:bg-orange-400 transition rounded">
+                    <a href="https://rlabsllc.github.io/games/hillrider" target="_blank" class="inline-block w-full py-3 text-center text-black font-bold transition rounded hover:opacity-80" style="background-color: var(--primary-neon)">
                         Open Game
                     </a>
                 </div>
 
                 <!-- COUCH 2048 CARD -->
-                <div class="border border-white/10 bg-black/40 p-6 rounded-lg hover:border-orange-500 transition duration-300 flex flex-col justify-between">
+                <div class="border border-white/10 bg-black/40 p-6 rounded-lg transition duration-300 flex flex-col justify-between hover:border-[var(--secondary-neon)]" onmouseover="this.style.borderColor='var(--secondary-neon)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
                     <div>
                         <h3 class="text-xl font-bold text-white mb-2">Couch2048</h3>
-                        <div class="h-1 w-12 bg-orange-500 mb-4"></div>
+                        <div class="h-1 w-12 mb-4" style="background-color: var(--secondary-neon)"></div>
                         <p class="text-gray-400 text-sm mb-6">
                             A cool version of 2048. Mouse recommended!
                         </p>
                     </div>
-                    <a href="https://rlabsllc.github.io/games/couch2048" target="_blank" class="inline-block w-full py-3 text-center bg-orange-500 text-black font-bold hover:bg-orange-400 transition rounded">
+                    <a href="https://rlabsllc.github.io/games/couch2048" target="_blank" class="inline-block w-full py-3 text-center text-black font-bold transition rounded hover:opacity-80" style="background-color: var(--secondary-neon)">
                         Open Game
                     </a>
                 </div>
                 
                 <!-- CLONE ROYALE CARD -->
-                <div class="border border-white/10 bg-black/40 p-6 rounded-lg hover:border-orange-500 transition duration-300 flex flex-col justify-between">
+                <div class="border border-white/10 bg-black/40 p-6 rounded-lg transition duration-300 flex flex-col justify-between hover:border-[var(--primary-neon)]" onmouseover="this.style.borderColor='var(--primary-neon)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
                     <div>
                         <h3 class="text-xl font-bold text-white mb-2">Clone Royale</h3>
-                        <div class="h-1 w-12 bg-orange-500 mb-4"></div>
+                        <div class="h-1 w-12 mb-4" style="background-color: var(--primary-neon)"></div>
                         <p class="text-gray-400 text-sm mb-6">
                             A strategic remake of Clash Royale. Deploy units and destroy enemy towers directly in your browser.
                         </p>
                     </div>
-                    <a href="https://rlabsllc.github.io/games/cloneroyale" target="_blank" class="inline-block w-full py-3 text-center bg-orange-500 text-black font-bold hover:bg-orange-400 transition rounded">
+                    <a href="https://rlabsllc.github.io/games/cloneroyale" target="_blank" class="inline-block w-full py-3 text-center text-black font-bold transition rounded hover:opacity-80" style="background-color: var(--primary-neon)">
                         Open Game
                     </a>
                 </div>
 
-                <!-- PLACEHOLDER FOR FUTURE GAMES -->
+                <!-- PLACEHOLDER -->
                 <div class="border border-white/5 bg-black/20 p-6 rounded-lg opacity-50 flex flex-col justify-center items-center text-center min-h-[200px]">
                     <h3 class="text-xl font-bold text-gray-600 mb-2">Slot Empty</h3>
                     <p class="text-gray-700 text-sm">Waiting for new deployment...</p>
@@ -262,18 +359,17 @@
 
         <!-- SYSTEM GUIDE OVERLAY -->
         <div id="game-guide" class="game-content hidden flex-col items-start w-full max-w-3xl glass-panel p-10 rounded-xl overflow-y-auto max-h-[80vh]">
-            <h2 class="text-3xl font-mono text-green-400 mb-8 tracking-widest border-b border-gray-700 w-full pb-4">GAME_RETRIEVAL</h2>
+            <h2 class="text-3xl font-mono mb-8 tracking-widest border-b border-gray-700 w-full pb-4" style="color: var(--primary-neon)">GAME_RETRIEVAL</h2>
             
             <div class="space-y-8 w-full">
-                
-                <!-- Step 0: GitHub Retrieval -->
+                <!-- Step 0 -->
                 <div>
                     <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-cyan-500 rounded-full"></span> 
+                        <span class="w-2 h-2 rounded-full" style="background-color: var(--secondary-neon)"></span> 
                         STEP 0: RETRIEVE FILES
                     </h3>
                     <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
-                        <p>1. Click the <span class="text-cyan-400">[ GITHUB ]</span> link at the top of this page.</p>
+                        <p>1. Click the <span style="color: var(--primary-neon)">[ GITHUB ]</span> link.</p>
                         <p>2. Browse the repository list to find a game file (e.g., <span class="text-gray-500">game_name.html</span>).</p>
                         <p>3. Click the file name to open its preview.</p>
                         <p>4. Locate the "Download" or "Raw" button (top right of file view) to save it.</p>
@@ -285,40 +381,26 @@
                 <!-- Windows/Linux/Mac -->
                 <div>
                     <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> 
+                        <span class="w-2 h-2 rounded-full" style="background-color: var(--primary-neon)"></span> 
                         Windows / Linux / Mac
                     </h3>
                     <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
-                        <p>1. Ensure the <span class="text-green-400">.html</span> file is saved to your drive.</p>
+                        <p>1. Ensure the <span style="color: var(--primary-neon)">.html</span> file is saved.</p>
                         <p>2. Right-click the file.</p>
                         <p>3. Select "Open With" -> Google Chrome, Firefox, or Edge.</p>
-                        <p class="text-xs text-gray-500 pt-2">* No installation or internet connection required to play.</p>
                     </div>
                 </div>
 
                 <!-- Chromebook -->
                 <div>
                     <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> 
+                        <span class="w-2 h-2 rounded-full" style="background-color: var(--primary-neon)"></span> 
                         Chromebook / ChromeOS
                     </h3>
                     <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
                         <p>1. Save the file to your "Downloads" folder.</p>
                         <p>2. Open the "Files" app.</p>
                         <p>3. Double-click the file to launch it directly in the browser.</p>
-                    </div>
-                </div>
-
-                <!-- Mobile -->
-                <div>
-                    <h3 class="text-xl text-white font-bold mb-2 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> 
-                        Mobile Devices
-                    </h3>
-                    <div class="bg-black/30 p-4 rounded border border-white/10 text-sm text-gray-300 font-mono space-y-2">
-                        <p>1. Download the file to your device storage.</p>
-                        <p>2. Use a File Manager app to locate the file.</p>
-                        <p>3. Tap to open. Select your preferred browser if prompted.</p>
                     </div>
                 </div>
             </div>
@@ -328,7 +410,26 @@
 
     <!-- LOGIC SCRIPTS -->
     <script>
-        // --- RANDOM QUOTE GENERATOR ---
+        // --- VIBE TUNER (THEME SWITCHER) ---
+        const root = document.documentElement;
+        
+        function setTheme(theme) {
+            if(theme === 'cyber') {
+                root.style.setProperty('--primary-neon', '#00f3ff');
+                root.style.setProperty('--secondary-neon', '#bc13fe');
+            } else if(theme === 'matrix') {
+                root.style.setProperty('--primary-neon', '#0aff68');
+                root.style.setProperty('--secondary-neon', '#00f3ff');
+            } else if(theme === 'sunset') {
+                root.style.setProperty('--primary-neon', '#ffaa00');
+                root.style.setProperty('--secondary-neon', '#ff0055');
+            } else if(theme === 'royal') {
+                root.style.setProperty('--primary-neon', '#bc13fe');
+                root.style.setProperty('--secondary-neon', '#00f3ff');
+            }
+        }
+
+        // --- RANDOM QUOTE ---
         const quotes = [
             "Even I'm angry at all the unskippable ads!",
             "Cuz someone hasn't decided to be this kind",
@@ -341,7 +442,6 @@
             "Warning: May contain actual gameplay.",
             "More frames, less popups."
         ];
-        
         const quoteEl = document.getElementById('random-quote');
         quoteEl.innerText = "> " + quotes[Math.floor(Math.random() * quotes.length)];
 
@@ -383,6 +483,7 @@
                 }
             }
             draw() {
+                // Use variable color for particles? No, keep white for contrast
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
@@ -394,6 +495,11 @@
 
         function animateBg() {
             ctx.clearRect(0,0,canvasWidth,canvasHeight);
+            
+            // Get current neon color for lines
+            const neonColor = getComputedStyle(root).getPropertyValue('--primary-neon').trim();
+            const [r,g,b] = hexToRgb(neonColor);
+
             particles.forEach((p, i) => {
                 p.update();
                 p.draw();
@@ -404,7 +510,7 @@
                     const d = Math.sqrt(dx*dx + dy*dy);
                     if(d < 100) {
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(0, 243, 255, ${0.15 - d/100 * 0.15})`;
+                        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.15 - d/100 * 0.15})`;
                         ctx.lineWidth = 0.5;
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(particles[j].x, particles[j].y);
@@ -414,11 +520,22 @@
             });
             requestAnimationFrame(animateBg);
         }
+        
+        function hexToRgb(hex) {
+            // Remove hash
+            hex = hex.replace(/^#/, '');
+            // Parse
+            const bigint = parseInt(hex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return [r, g, b];
+        }
+
         animateBg();
 
 
         // --- UI INTERACTION LOGIC ---
-
         const overlay = document.getElementById('game-overlay');
         const contents = document.querySelectorAll('.game-content');
         
