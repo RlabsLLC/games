@@ -7,7 +7,7 @@ Ad Free Games Here!
 
 # Avaiable Games:
 
-* EcoHill Racer 3D v1.5.2
+* EcoHill Racer 3D v2.3.1
 * Couch 2048 v1.1
 * Clone Royale v1 (Beta)
 * System Crash v4.0.0
