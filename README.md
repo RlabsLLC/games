@@ -10,6 +10,6 @@ Ad Free Games Here!
 * EcoHill Racer 3D v1.5.2
 * Couch 2048 v1.1
 * Clone Royale v1 (Beta)
-* System Crash v3.1.1 (MultiPlayer) (Beta)
+* System Crash v4.0.0
 * One other game coming in soon!
 
