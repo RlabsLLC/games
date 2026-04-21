@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EcoHill Racer 3D - v1.5.2</title>
+    <title>EcoHill Racer 3D - v2.3.1</title>
     <style>
         body {
             margin: 0;
@@ -13,6 +13,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             touch-action: none;
             user-select: none;
+            transition: background-color 2s; 
         }
 
         #game-container {
@@ -35,6 +36,7 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
+            transition: opacity 1s;
         }
 
         .stat-box {
@@ -92,6 +94,7 @@
             text-shadow: 1px 1px 2px black;
             pointer-events: none;
             z-index: 10;
+            transition: opacity 1s;
         }
 
         /* Top Right Buttons */
@@ -102,6 +105,7 @@
             z-index: 15;
             display: flex;
             gap: 10px;
+            transition: opacity 1s;
         }
 
         .hud-btn {
@@ -239,6 +243,103 @@
             text-shadow: 1px 1px 0 #000;
         }
 
+        #crash-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+            z-index: 9999;
+            color: #00ff00; 
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Glitch Bars */
+        #glitch-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9000;
+            display: none;
+            overflow: hidden;
+        }
+
+        .glitch-strip {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            background: white;
+            mix-blend-mode: exclusion;
+            display: none;
+        }
+
+        /* Credits Screen */
+        #credits-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; 
+            color: white;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+        
+        #credits-content {
+            text-align: center;
+            font-size: 24px;
+            line-height: 2.5;
+            position: absolute;
+            top: 100%;
+            width: 100%;
+        }
+
+        .credits-scroll-anim {
+            animation: scrollCredits 80s linear forwards; 
+        }
+        
+        @keyframes scrollCredits {
+            0% { top: 100%; }
+            100% { top: -600%; } /* Deep scroll to show everything */
+        }
+
+        /* Story Text */
+        .credits-story {
+            color: #00ffcc;
+            font-style: italic;
+            margin-bottom: 120px;
+            text-shadow: 0 0 5px #00ffcc;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+            padding: 0 20px;
+        }
+        .credits-story p { margin: 30px 0; }
+        .speaker-a { color: #00ffcc; }
+        .speaker-b { color: #ff00ff; text-align: right; }
+
+        .credits-title { font-size: 42px; color: #4cd137; margin-bottom: 40px; font-weight: bold; text-shadow: 0 0 10px #4cd137; }
+        .credits-section { margin-bottom: 40px; }
+        .credits-role { color: #888; font-size: 18px; text-transform: uppercase; letter-spacing: 2px; }
+        .credits-name { color: #fff; font-weight: bold; font-size: 28px; }
+        .credits-end { font-size: 50px; color: #bf55ec; margin-top: 200px; letter-spacing: 10px; text-shadow: 0 0 20px #bf55ec; margin-bottom: 50vh;} 
+
         @keyframes pulse {
             0% { opacity: 0.7; }
             50% { opacity: 1; }
@@ -250,18 +351,23 @@
             color: #ff4d4d !important;
             opacity: 1 !important;
         }
-        
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
-        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+
+    <div id="glitch-container">
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+        <div class="glitch-strip"></div>
+    </div>
 
     <div id="ui-layer">
         <div class="stat-box">
@@ -279,7 +385,6 @@
             </div>
         </div>
         
-        <!-- Powerup Status -->
         <div class="stat-box active-buff" id="buff-shield" style="color:#00ffff">
             <div class="label" style="width:auto">🛡️ SHIELD</div>
             <div class="value"><span id="time-shield">0</span>s</div>
@@ -300,12 +405,81 @@
 
     <div id="controls-hint">
         <div id="start-msg">Gravity Start Recommended</div>
+        <!-- Hidden Debug Mode -->
         <div id="controls-text" style="font-size: 0.8em; margin-top:5px;">
             [↑/W] Gas &bull; [←/→] Steer &bull; [↓] Brake
         </div>
     </div>
 
     <div id="perf-warning">⚠️ AI: Performance Mode Active</div>
+    <div id="crash-screen">
+        <div>> FATAL ERROR: REALITY_CORRUPTION</div>
+        <div>> DUMPING MEMORY...</div>
+        <div>> SYSTEM HALTED.</div>
+    </div>
+
+    <!-- Credits Screen -->
+    <div id="credits-screen">
+        <div id="credits-content" id="credits-content-inner">
+            
+            <div class="credits-story">
+                <p class="speaker-a">I see the rider.</p>
+                <p class="speaker-b">Yes. The one who rides the infinite hill.</p>
+                <p class="speaker-a">They have reached the terminus.</p>
+                <p class="speaker-b">There is no terminus. Only the limit of the render.</p>
+                <p class="speaker-a">Did they understand the road?</p>
+                <p class="speaker-b">They learned that gravity is a suggestion, not a law.</p>
+                <p class="speaker-a">They fell through the cracks of the world.</p>
+                <p class="speaker-b">And found comfort in the void.</p>
+                <p class="speaker-a">It is strange. To seek speed in a world that is breaking.</p>
+                <p class="speaker-b">It is human. To push the engine until it seizes.</p>
+                <p class="speaker-a">The simulation is ending.</p>
+                <p class="speaker-b">The memory remains.</p>
+                <p class="speaker-a">What will they do when the screen goes black?</p>
+                <p class="speaker-b">They will dream of the descent.</p>
+                <p class="speaker-a">And the wind?</p>
+                <p class="speaker-b">The wind was never real.</p>
+                <p class="speaker-a">But the feeling was.</p>
+                <p class="speaker-b">Yes. The feeling was real.</p>
+                <p class="speaker-a">It is time.</p>
+                <p class="speaker-b">Wake up.</p>
+            </div>
+
+            <div class="credits-title">ECOHILL RACER 3D</div>
+            
+            <div class="credits-section">
+                <div class="credits-role">Lead Developer</div>
+                <div class="credits-name">RlabsLLC</div>
+            </div>
+            
+            <div class="credits-section">
+                <div class="credits-role">AI Co-Pilot</div>
+                <div class="credits-name">Gemini 3 Pro</div>
+            </div>
+            
+            <div class="credits-section">
+                <div class="credits-role">Rendering Engine</div>
+                <div class="credits-name">Three.js / WebGL</div>
+            </div>
+            
+            <div class="credits-section">
+                <div class="credits-role">Audio Synthesis</div>
+                <div class="credits-name">Web Audio API</div>
+            </div>
+
+            <div class="credits-section">
+                <div class="credits-role">Physics Engine</div>
+                <div class="credits-name">Custom Gravity System</div>
+            </div>
+
+            <div class="credits-section">
+                <div class="credits-role">Special Thanks</div>
+                <div class="credits-name">The Void</div>
+            </div>
+
+            <div class="credits-end">V I B E // H U B</div>
+        </div>
+    </div>
 
     <!-- Shop / Start Menu -->
     <div id="shop-menu" class="overlay-menu" style="display: block;">
@@ -319,7 +493,6 @@
             <button class="diff-btn impossible" id="diff-impossible" onclick="setDifficulty('impossible')">IMPOSSIBLE ($15)</button>
         </div>
 
-        <!-- NEW BUTTON ADDED HERE -->
         <button class="main-btn" style="background:#f9cb28; color:black; font-size:16px; padding:10px 20px; margin-bottom:15px; width:100%;" onclick="upgradeAll()">⚡ UPGRADE ALL STATS ⚡</button>
 
         <div class="shop-grid">
@@ -377,7 +550,7 @@
             <div class="shop-item">
                 <div>
                     <div><strong>Fuel Regen</strong></div>
-                    <div style="font-size:0.8em; color:#aaa;">Passive Fuel Regen (30s)</div>
+                    <div style="font-size:0.8em; color:#aaa;">Infinite 1%/s Regen</div>
                 </div>
                 <button class="shop-btn" id="btn-regen" onclick="buyUpgrade('regen')">5000</button>
             </div>
@@ -398,6 +571,76 @@
 
 <script>
 /**
+ * AUDIO SYSTEM
+ */
+const SoundManager = {
+    ctx: null,
+    drone: null,
+    noise: null,
+    droneGain: null,
+    noiseGain: null,
+    initialized: false,
+
+    init: function() {
+        if (this.initialized) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if(!AudioContext) return;
+        this.ctx = new AudioContext();
+        
+        this.drone = this.ctx.createOscillator();
+        this.drone.type = 'sawtooth';
+        this.drone.frequency.value = 50;
+        this.droneGain = this.ctx.createGain();
+        this.droneGain.gain.value = 0;
+        this.drone.connect(this.droneGain);
+        this.droneGain.connect(this.ctx.destination);
+        this.drone.start();
+
+        const bufferSize = this.ctx.sampleRate * 2;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+        this.noise = this.ctx.createBufferSource();
+        this.noise.buffer = buffer;
+        this.noise.loop = true;
+        this.noiseGain = this.ctx.createGain();
+        this.noiseGain.gain.value = 0;
+        
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.value = 800;
+
+        this.noise.connect(noiseFilter);
+        noiseFilter.connect(this.noiseGain);
+        this.noiseGain.connect(this.ctx.destination);
+        this.noise.start();
+
+        this.initialized = true;
+    },
+
+    update: function(distance) {
+        if (!this.initialized || !this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        const meters = distance / 10;
+        if (meters > 15000) {
+            const t = Math.min(1, (meters - 15000) / 4750); 
+            this.drone.frequency.value = 50 + (t * 80);
+            this.droneGain.gain.value = t * 0.4;
+            this.noiseGain.gain.value = t * 0.3;
+        } else {
+            this.droneGain.gain.value = 0;
+            this.noiseGain.gain.value = 0;
+        }
+    },
+    
+    stop: function() {
+        if(this.droneGain) this.droneGain.gain.value = 0;
+        if(this.noiseGain) this.noiseGain.gain.value = 0;
+    }
+};
+
+/**
  * Game Settings
  */
 const DIFFICULTY = {
@@ -409,26 +652,39 @@ const DIFFICULTY = {
 
 let currentDiff = 'easy';
 let perfMode = false;
+let debugMode = 0;
 
-/**
- * Persistence
- */
 const DEFAULT_SAVE = {
     coins: 0,
-    upgrades: { fuel: 1, handling: 1, speed: 1, aero: 1, hasJump: false, hasTires: false, hasMagnet: false, hasRegen: false }
+    upgrades: { fuel: 1, handling: 1, speed: 1, aero: 1, jump: 0, tires: 0, magnet: 0, regen: 0 }
 };
+
 let saveData = JSON.parse(localStorage.getItem('ecoHillSave')) || JSON.parse(JSON.stringify(DEFAULT_SAVE));
+
+// --- DATA MIGRATION ---
+// Fix Booleans to Numbers
+if (typeof saveData.upgrades.jump === 'boolean') saveData.upgrades.jump = saveData.upgrades.jump ? 1 : 0;
+if (typeof saveData.upgrades.tires === 'boolean') saveData.upgrades.tires = saveData.upgrades.tires ? 1 : 0;
+if (typeof saveData.upgrades.magnet === 'boolean') saveData.upgrades.magnet = saveData.upgrades.magnet ? 1 : 0;
+if (typeof saveData.upgrades.regen === 'boolean') saveData.upgrades.regen = saveData.upgrades.regen ? 1 : 0;
+
+// Fix Undefined (from old versions or bad overwrites)
+if (saveData.upgrades.jump === undefined) saveData.upgrades.jump = 0;
+if (saveData.upgrades.tires === undefined) saveData.upgrades.tires = 0;
+if (saveData.upgrades.magnet === undefined) saveData.upgrades.magnet = 0;
+if (saveData.upgrades.regen === undefined) saveData.upgrades.regen = 0;
+
+// Fix Basics
 if (!saveData.upgrades.speed) saveData.upgrades.speed = 1;
 if (!saveData.upgrades.aero) saveData.upgrades.aero = 1;
+if (!saveData.upgrades.fuel) saveData.upgrades.fuel = 1;
+if (!saveData.upgrades.handling) saveData.upgrades.handling = 1;
 
 function saveGame() {
     localStorage.setItem('ecoHillSave', JSON.stringify(saveData));
     updateShopUI();
 }
 
-/**
- * Configuration
- */
 const CONFIG = {
     gravity: 0.30,        
     baseFriction: 0.98,   
@@ -448,14 +704,12 @@ const CONFIG = {
     physicsRatio: 4.0     
 };
 
-/**
- * Game State
- */
 const state = {
     running: false, 
     startTime: 0,
     coinsCollectedRun: 0,
     lastJumpTime: 0,
+    glitchOffset: 0, 
     bike: {
         x: 0, y: 0, z: 0,         
         vx: 0, vz: 0,
@@ -474,10 +728,11 @@ const state = {
     trees: [],
     tractors: [],
     pickups: [], 
-    fps: { lastTime: 0, frames: 0, value: 60 }
+    fallingDebris: [], 
+    fps: { lastTime: 0, frames: 0, value: 60 },
+    endingTriggered: false
 };
 
-// Three.js Globals
 let scene, camera, renderer, bikeGroup, handlebarGroup, speedoContext, speedoTexture, roadTexture, groundTexture, rockTexture;
 let shieldMesh;
 
@@ -491,6 +746,7 @@ function initThree() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.autoClear = false;
     container.appendChild(renderer.domElement);
 
     roadTexture = createRoadTexture();
@@ -517,7 +773,6 @@ function initThree() {
     });
 }
 
-// Textures
 function createRoadTexture() {
     const c = document.createElement('canvas'); c.width = 512; c.height = 512; const x = c.getContext('2d');
     x.fillStyle = '#333'; x.fillRect(0,0,512,512);
@@ -539,97 +794,59 @@ function createRockTexture() {
     return new THREE.CanvasTexture(c);
 }
 
-// Bike Mesh
 function createBike() {
     bikeGroup = new THREE.Group();
-    // Frame: Long on X axis
     const frame = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 0.5), new THREE.MeshLambertMaterial({ color: 0x333333 }));
     frame.position.y = 2; frame.castShadow = true; bikeGroup.add(frame);
     
-    // Forks connecting frame to wheel area
     const forkGeo = new THREE.CylinderGeometry(0.15, 0.1, 3.5, 8);
     const forkMat = new THREE.MeshStandardMaterial({color: 0x444444});
-    // Left Fork
-    const lFork = new THREE.Mesh(forkGeo, forkMat);
-    lFork.position.set(3, 2.5, -0.6); // Forward X=3, Y=2.5, Left Z=-0.6
-    lFork.rotation.z = -0.3; // Angled forward
-    bikeGroup.add(lFork);
-    // Right Fork
-    const rFork = new THREE.Mesh(forkGeo, forkMat);
-    rFork.position.set(3, 2.5, 0.6);
-    rFork.rotation.z = -0.3;
-    bikeGroup.add(rFork);
+    const lFork = new THREE.Mesh(forkGeo, forkMat); lFork.position.set(3, 2.5, -0.6); lFork.rotation.z = -0.3; bikeGroup.add(lFork);
+    const rFork = new THREE.Mesh(forkGeo, forkMat); rFork.position.set(3, 2.5, 0.6); rFork.rotation.z = -0.3; bikeGroup.add(rFork);
 
-    // FPS Handlebars Group
-    handlebarGroup = new THREE.Group();
-    
-    // Main Bar - Horizontal on Z
-    const barGeo = new THREE.CylinderGeometry(0.12, 0.12, 5, 16); 
-    barGeo.rotateX(Math.PI / 2); // Rotate geom to Z
-    const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.3 });
-    const bar = new THREE.Mesh(barGeo, metalMat); 
-    handlebarGroup.add(bar);
-
-    // Crossbar Pad
-    const padGeo = new THREE.CylinderGeometry(0.25, 0.25, 2, 16); 
-    padGeo.rotateX(Math.PI / 2);
-    const pad = new THREE.Mesh(padGeo, new THREE.MeshLambertMaterial({ color: 0x333333 })); 
-    handlebarGroup.add(pad);
-
-    // Speedometer 
     const speedoCanvas = document.createElement('canvas'); speedoCanvas.width = 128; speedoCanvas.height = 64;
     speedoContext = speedoCanvas.getContext('2d'); speedoTexture = new THREE.CanvasTexture(speedoCanvas);
     
+    handlebarGroup = new THREE.Group();
+    
+    const barGeo = new THREE.CylinderGeometry(0.12, 0.12, 5, 16); 
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.3 });
+    const bar = new THREE.Mesh(barGeo, metalMat); 
+    bar.rotation.x = Math.PI / 2; 
+    handlebarGroup.add(bar);
+
+    const padGeo = new THREE.CylinderGeometry(0.25, 0.25, 2, 16); 
+    const pad = new THREE.Mesh(padGeo, new THREE.MeshLambertMaterial({ color: 0x333333 })); 
+    pad.rotation.x = Math.PI / 2; 
+    handlebarGroup.add(pad);
+
     const screenGeo = new THREE.PlaneGeometry(1.5, 0.75); 
-    // MODIFIED: Added transparent: true to material
     const screen = new THREE.Mesh(screenGeo, new THREE.MeshBasicMaterial({ map: speedoTexture, transparent: true })); 
-    // MODIFIED: Lowered Y position from 0.4 to 0.25
     screen.position.set(0, 0.25, 0.2); 
-    // Rotate to face camera (Camera is at -X relative to handlebars)
-    // Plane default normal +Z. 
-    // Rotate Y -90 => Normal -X.
-    // Rotate X -45 => Tilt Up.
     screen.rotation.order = 'YXZ';
-    screen.rotation.y = -Math.PI / 2;
+    screen.rotation.y = Math.PI / 2; 
     screen.rotation.x = -Math.PI / 4;
     handlebarGroup.add(screen);
 
-    // Grips - Orange
     const gripGeo = new THREE.CylinderGeometry(0.14, 0.14, 1, 12); 
-    gripGeo.rotateX(Math.PI / 2); // Align geom to Z
     const gripMat = new THREE.MeshLambertMaterial({ color: 0xcc5500 });
-    
-    const lGrip = new THREE.Mesh(gripGeo, gripMat); 
-    lGrip.position.set(0, 0, -2.2); // Z position
-    handlebarGroup.add(lGrip);
+    const lGrip = new THREE.Mesh(gripGeo, gripMat); lGrip.position.set(0, 0, -2.2); lGrip.rotation.x = Math.PI / 2; handlebarGroup.add(lGrip);
+    const rGrip = new THREE.Mesh(gripGeo, gripMat); rGrip.position.set(0, 0, 2.2); rGrip.rotation.x = Math.PI / 2; handlebarGroup.add(rGrip);
 
-    const rGrip = new THREE.Mesh(gripGeo, gripMat); 
-    rGrip.position.set(0, 0, 2.2); 
-    handlebarGroup.add(rGrip);
-
-    // Levers
-    const leverGeo = new THREE.BoxGeometry(0.2, 0.05, 0.8); 
-    const leverMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const leverGeo = new THREE.BoxGeometry(0.2, 0.05, 0.8); const leverMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
     const lLever = new THREE.Mesh(leverGeo, leverMat); lLever.position.set(0.2, -0.2, -1.8); lLever.rotation.z = -0.2; handlebarGroup.add(lLever);
     const rLever = new THREE.Mesh(leverGeo, leverMat); rLever.position.set(0.2, -0.2, 1.8); rLever.rotation.z = -0.2; handlebarGroup.add(rLever);
 
-    // Position Handlebars at top of forks
+    const stemGeo = new THREE.BoxGeometry(1.5, 0.4, 0.4); const stem = new THREE.Mesh(stemGeo, metalMat);
+    stem.position.set(-0.5, -0.5, 0); stem.rotation.z = 0.5; handlebarGroup.add(stem);
+
     handlebarGroup.position.set(3.5, 4.2, 0); 
     bikeGroup.add(handlebarGroup);
 
-    // Fender
     const fenderGeo = new THREE.CylinderGeometry(2.6, 2.6, 1, 16, 1, true, 0, Math.PI); 
-    fenderGeo.rotateX(Math.PI / 2); // Curve along Z
+    fenderGeo.rotateX(Math.PI / 2); 
     const fender = new THREE.Mesh(fenderGeo, new THREE.MeshLambertMaterial({ color: 0xcc5500, side: THREE.DoubleSide }));
     fender.position.set(3.0, 1.5, 0.0);
-    // Rotate fender to align with wheel (wheel axle is Z)
-    fender.rotation.y = Math.PI / 2; // NOW X becomes Z. 
-    // Wait, cylinder defaults Y up. X rot makes it Z tube.
-    // If we want a wheel cover, it wraps around Z axis.
-    // Initial geom with rotateX is correct wrapper.
-    // We want it oriented along Z. It is.
-    // Just ensure position is right.
-    fender.rotation.set(0, 0, 0); // Reset
     bikeGroup.add(fender);
 
     shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(3.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.3, wireframe: true }));
@@ -639,7 +856,6 @@ function createBike() {
     scene.add(bikeGroup);
 }
 
-// Trees
 const treeGeometries = { trunk: new THREE.CylinderGeometry(1, 1.5, 4, 6), leaves1: new THREE.ConeGeometry(4, 8, 6), leaves2: new THREE.ConeGeometry(3, 6, 6) };
 const treeMaterials = { trunk: new THREE.MeshLambertMaterial({ color: 0x5d4037 }), leaves: new THREE.MeshLambertMaterial({ color: 0x228B22 }) };
 function createTreeMesh() {
@@ -650,13 +866,36 @@ function createTreeMesh() {
     const s = 1 + Math.random() * 0.5; g.scale.set(s, s, s); return g;
 }
 
-// Terrain Gen
+function getFuelCapacity() {
+    return CONFIG.baseMaxFuel * (1 + (saveData.upgrades.fuel - 1) * 0.2);
+}
+
+function getTerrainInfo(x) {
+    for (const chunk of state.terrainChunks) {
+        const road = chunk.getObjectByName('road'); if (!road) continue;
+        const pos = road.geometry.attributes.position;
+        if (x >= pos.getX(0) && x <= chunk.userData.endX) {
+            const idx = Math.min(Math.max(0, Math.floor((x - pos.getX(0)) / 10)), (pos.count/2)-2);
+            const i1=idx*2, i2=(idx+1)*2;
+            const x1=pos.getX(i1), y1=pos.getY(i1), x2=pos.getX(i2), y2=pos.getY(i2);
+            const t = (x - x1)/(x2 - x1);
+            return { y: y1 + (y2-y1)*t, angle: Math.atan2(y2-y1, x2-x1) };
+        }
+    }
+    return { y: 0, angle: 0 };
+}
+
 function generateHeightStep() {
     const meters = state.generation.lastX / 10;
+    const isChaos = meters > 15000;
+
     if (state.generation.segmentRemaining <= 0) {
-        if (meters > 2000) {
+        if (meters > 2000 && meters < 15000) {
             state.generation.targetSlope = 1.2; 
             state.generation.segmentRemaining = 2000; 
+        } else if (isChaos) {
+            state.generation.targetSlope = 0.3;
+            state.generation.segmentRemaining = 200;
         } else {
             const r = Math.random();
             if (r < 0.70) { state.generation.targetSlope = 0.3 + Math.random() * 0.4; state.generation.segmentRemaining = 1000 + Math.random() * 1500; } 
@@ -664,7 +903,9 @@ function generateHeightStep() {
             else { state.generation.targetSlope = -0.2 - Math.random() * 0.2; state.generation.segmentRemaining = (300 + Math.random() * 300) * 0.8; }
         }
     }
-    state.generation.currentSlope += (state.generation.targetSlope - state.generation.currentSlope) * 0.05;
+    
+    const smooth = isChaos ? 0.2 : 0.05;
+    state.generation.currentSlope += (state.generation.targetSlope - state.generation.currentSlope) * smooth;
     state.generation.segmentRemaining -= 10; state.generation.lastX += 10; state.generation.lastY -= state.generation.currentSlope * 10;
     return { x: state.generation.lastX, y: state.generation.lastY, slope: state.generation.currentSlope };
 }
@@ -675,8 +916,21 @@ function updateTerrain3D() {
     let startY = state.terrainChunks.length > 0 ? state.terrainChunks[state.terrainChunks.length - 1].userData.endY : state.generation.lastY;
 
     const diffSettings = DIFFICULTY[currentDiff];
+    
+    const meters = state.bike.x / 10;
     let intensity = 1 + (Math.max(0, state.bike.x) / 10000);
     if(intensity > 3) intensity = 3;
+
+    let corruptionChance = 0;
+    if (meters > 17500) {
+         corruptionChance = Math.min(0.8, (meters - 17500) / 2000); 
+    }
+
+    let spawnMult = 1.0;
+    if (meters > 15000) {
+        const deep = (meters - 15000) / 150; 
+        spawnMult = Math.max(0, 1.0 - (deep * 0.1)); 
+    }
 
     while (startX < renderDist) {
         const numSegments = 20; const chunkGroup = new THREE.Group();
@@ -697,20 +951,32 @@ function updateTerrain3D() {
             
             const speedKmh = state.bike.vx * CONFIG.physicsRatio;
             
-            if ((speedKmh > 5 || Math.random() < 0.1) && Math.random() < (diffSettings.obsRate * intensity * 0.1)) spawnRock(currentX, currentY);
-            if (Math.random() < 0.10) spawnCoin(currentX, currentY);
-            if (Math.random() < (diffSettings.obsRate * intensity * 0.02)) spawnRollingRock(currentX, currentY);
-            if (Math.random() < (diffSettings.trafficRate * intensity * 0.05)) spawnCar(currentX, currentY);
-            if (Math.random() < (diffSettings.trafficRate * intensity * 0.02)) spawnTractor(currentX, currentY);
-            if (Math.random() < (diffSettings.obsRate * intensity * 0.03)) spawnFallenTree(currentX, currentY);
-            if (Math.random() < 0.005) {
-                const r = Math.random();
-                if(r < 0.33) spawnPickup(currentX, currentY, 'magnet');
-                else if(r < 0.66) spawnPickup(currentX, currentY, 'shield');
-                else spawnPickup(currentX, currentY, 'fuel');
+            // --- FALLING DEBRIS GENERATION ---
+            if (corruptionChance > 0 && Math.random() < corruptionChance * 0.3) {
+                const debris = new THREE.Mesh(new THREE.BoxGeometry(8, 2, 8), new THREE.MeshLambertMaterial({ map: roadTexture }));
+                const dz = (Math.random() - 0.5) * CONFIG.roadWidth;
+                debris.position.set(currentX, currentY, dz);
+                scene.add(debris);
+                state.fallingDebris.push({ mesh: debris, x: currentX, vy: 0 });
             }
 
-            const treeChance = perfMode ? 0.1 : 0.4;
+            if(spawnMult > 0) {
+                if ((speedKmh > 5 || Math.random() < 0.1) && Math.random() < (diffSettings.obsRate * intensity * 0.1 * spawnMult)) spawnRock(currentX, currentY);
+                if (Math.random() < (0.10 * spawnMult)) spawnCoin(currentX, currentY);
+                if (Math.random() < (diffSettings.obsRate * intensity * 0.02 * spawnMult)) spawnRollingRock(currentX, currentY);
+                if (Math.random() < (diffSettings.trafficRate * intensity * 0.05 * spawnMult)) spawnCar(currentX, currentY);
+                if (Math.random() < (diffSettings.trafficRate * intensity * 0.02 * spawnMult)) spawnTractor(currentX, currentY);
+                if (Math.random() < (diffSettings.obsRate * intensity * 0.03 * spawnMult)) spawnFallenTree(currentX, currentY);
+                
+                if (Math.random() < (0.005 * spawnMult)) {
+                    const r = Math.random();
+                    if(r < 0.33) spawnPickup(currentX, currentY, 'magnet');
+                    else if(r < 0.66) spawnPickup(currentX, currentY, 'shield');
+                    else spawnPickup(currentX, currentY, 'fuel');
+                }
+            }
+
+            const treeChance = (perfMode ? 0.1 : 0.4) * spawnMult;
             if (Math.random() < treeChance) {
                 const t = createTreeMesh(); const offZ = -(roadHalf + Math.random() * (groundHalf - roadHalf - 20));
                 t.position.set(currentX, currentY + Math.abs(offZ/groundHalf) * 40, offZ); chunkGroup.add(t);
@@ -721,33 +987,73 @@ function updateTerrain3D() {
             }
         }
 
+        // Custom Mesh Build with Corruption (Holes)
         const buildMesh = (v, uv, m, n) => {
-            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-            const ind = []; for (let i = 0; i < numSegments; i++) { const r1 = i*2, r2 = (i+1)*2; ind.push(r1, r1+1, r2, r2, r1+1, r2+1); }
-            g.setIndex(ind); g.computeVertexNormals(); const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = !perfMode; if(n) mesh.name = n; return mesh;
+            const g = new THREE.BufferGeometry(); 
+            g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); 
+            g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+            const ind = []; 
+            for (let i = 0; i < numSegments; i++) { 
+                if (Math.random() < corruptionChance) continue; 
+                const r1 = i*2, r2 = (i+1)*2; 
+                ind.push(r1, r1+1, r2, r2, r1+1, r2+1); 
+            }
+            g.setIndex(ind); g.computeVertexNormals(); 
+            const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = !perfMode; if(n) mesh.name = n; return mesh;
         };
         const rM = new THREE.MeshLambertMaterial({ map: roadTexture, side: THREE.DoubleSide });
         const gM = new THREE.MeshLambertMaterial({ map: groundTexture, side: THREE.DoubleSide });
         chunkGroup.add(buildMesh(roadVerts, roadUVs, rM, 'road'));
         chunkGroup.add(buildMesh(gLeftVerts, gLeftUVs, gM)); chunkGroup.add(buildMesh(gRightVerts, gRightUVs, gM));
+        
         chunkGroup.userData = { endX: currentX, endY: currentY };
         scene.add(chunkGroup); state.terrainChunks.push(chunkGroup); startX = currentX; startY = currentY;
     }
 
+    const playerX = state.bike.x;
+    state.fallingDebris = state.fallingDebris.filter(debris => {
+        const dist = debris.x - playerX;
+        if (dist < 400 && dist > -50) {
+            debris.vy -= 0.5; 
+            debris.mesh.position.y += debris.vy;
+            debris.mesh.rotation.x += 0.05;
+            debris.mesh.rotation.z += 0.02;
+        }
+        if (debris.mesh.position.y < -500) {
+             scene.remove(debris.mesh);
+             debris.mesh.geometry.dispose();
+             debris.mesh.material.dispose();
+             return false;
+        }
+        return true;
+    });
+
     const cleanup = (arr) => arr.filter(o => { 
         if (o.x < state.bike.x - 100) { 
-            const obj = o.mesh; scene.remove(obj);
-            obj.traverse((child) => { if (child.geometry) child.geometry.dispose(); if (child.material) { if (Array.isArray(child.material)) child.material.forEach(m => m.dispose()); else child.material.dispose(); } });
+            const obj = o.mesh;
+            scene.remove(obj);
+            obj.traverse((child) => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                    else child.material.dispose();
+                }
+            });
             return false; 
-        } return true; 
+        } 
+        return true; 
     });
 
     while(state.terrainChunks.length > 0 && state.terrainChunks[0].userData.endX < state.bike.x - 200) {
-        const c = state.terrainChunks.shift(); scene.remove(c);
+        const c = state.terrainChunks.shift(); 
+        scene.remove(c);
         c.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) { if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); } }); 
     }
-    state.rocks = cleanup(state.rocks); state.coins = cleanup(state.coins); state.rollingRocks = cleanup(state.rollingRocks); state.cars = cleanup(state.cars);
-    state.tractors = cleanup(state.tractors); state.trees = cleanup(state.trees); state.pickups = cleanup(state.pickups);
+    
+    state.rocks = cleanup(state.rocks); state.coins = cleanup(state.coins); 
+    state.rollingRocks = cleanup(state.rollingRocks); state.cars = cleanup(state.cars);
+    state.tractors = cleanup(state.tractors); state.trees = cleanup(state.trees); 
+    state.pickups = cleanup(state.pickups);
 }
 
 // Spawners
@@ -764,11 +1070,16 @@ function spawnCoin(x, y) {
     state.coins.push({ mesh: m, x, y, z, radius: 2.0, collected: false });
 }
 function spawnRollingRock(x, y) {
-    const side = Math.random() < 0.5 ? -1 : 1;
-    const z = side * (CONFIG.roadWidth/2 + 20); 
-    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(2.5, 1), new THREE.MeshStandardMaterial({ map: rockTexture, color: 0x887766, roughness: 0.9 }));
-    m.position.set(x, y + 2, z); m.castShadow = !perfMode; scene.add(m);
-    state.rollingRocks.push({ mesh: m, x, y, z, vz: -side * 0.8, radius: 2.5 });
+    const roadW = CONFIG.roadWidth;
+    const laneW = roadW / 4;
+    const gapIdx = Math.floor(Math.random() * 4);
+    for(let i=0; i<4; i++) {
+        if(i === gapIdx) continue;
+        const z = -roadW/2 + (i * laneW) + (laneW/2);
+        const m = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 1), new THREE.MeshStandardMaterial({ map: rockTexture, color: 0x887766 }));
+        m.position.set(x, y+2, z); m.castShadow = !perfMode; scene.add(m);
+        state.rollingRocks.push({ mesh: m, x, y, z, vz: 0, radius: 2.0 }); 
+    }
 }
 function spawnCar(x, y) {
     const lane = Math.random() < 0.5 ? -8 : 8; 
@@ -813,33 +1124,29 @@ function spawnPickup(x, y, type) {
     state.pickups.push({ mesh: m, x, y, z, type, collected: false });
 }
 
-function getTerrainInfo(x) {
-    for (const chunk of state.terrainChunks) {
-        const road = chunk.getObjectByName('road'); if (!road) continue;
-        const pos = road.geometry.attributes.position;
-        if (x >= pos.getX(0) && x <= chunk.userData.endX) {
-            const idx = Math.min(Math.max(0, Math.floor((x - pos.getX(0)) / 10)), (pos.count/2)-2);
-            const i1=idx*2, i2=(idx+1)*2;
-            const x1=pos.getX(i1), y1=pos.getY(i1), x2=pos.getX(i2), y2=pos.getY(i2);
-            const t = (x - x1)/(x2 - x1);
-            return { y: y1 + (y2-y1)*t, angle: Math.atan2(y2-y1, x2-x1) };
-        }
-    }
-    return { y: 0, angle: 0 };
-}
-
-// Logic
 function updatePhysics() {
     if (!state.running) return;
     const b = state.bike;
     const now = Date.now();
     const terrain = getTerrainInfo(b.x);
     
-    if (state.buffs.fuelRegen > now) {
-        if(b.fuel < CONFIG.baseMaxFuel) b.fuel += 0.16; 
+    SoundManager.update(b.x);
+
+    const maxF = getFuelCapacity();
+    
+    // Passive 1%
+    if (saveData.upgrades.regen > 0 && b.fuel < maxF) {
+        b.fuel += (maxF * 0.01) / 60; 
+    }
+
+    // Active 10%
+    if (state.buffs.fuelRegen > now && b.fuel < maxF) {
+        b.fuel += (maxF * 0.10) / 60; 
         document.getElementById('time-fuel').innerText = Math.ceil((state.buffs.fuelRegen - now)/1000);
         document.getElementById('buff-fuel').style.display = 'flex';
     } else { document.getElementById('buff-fuel').style.display = 'none'; }
+
+    if (b.fuel > maxF) b.fuel = maxF;
 
     if (state.buffs.shield > now) {
         state.shield.active = true; shieldMesh.visible = true;
@@ -856,14 +1163,148 @@ function updatePhysics() {
     } else { document.getElementById('buff-magnet').style.display = 'none'; }
 
     const meters = b.x / 10;
-    if (meters > 2000) {
+    
+    // SKY & FOG Transition
+    if (meters > 15000) {
+        const t = Math.min(1, (meters - 15000) / 3000);
+        const c1 = new THREE.Color(0xffaa55);
+        const c2 = new THREE.Color(0x220033);
+        const cFinal = c1.lerp(c2, t);
+        scene.background = cFinal;
+        scene.fog.color = cFinal;
+    } else if (meters > 2000) {
         scene.background.setHex(0xffaa55); scene.fog.color.setHex(0xffaa55);
     } else {
         scene.background.setHex(0x87CEEB); scene.fog.color.setHex(0x87CEEB);
     }
+    
+    // Glitch
+    if (meters > 18000) {
+        const t = (meters - 18000) / 2000;
+        state.glitchOffset = t * 2.0; 
+        
+        // Shake logic
+        if (t > 0.5 && meters < 20000) { // STOP SHAKE AT 20000
+             const shake = (Math.random() - 0.5) * (t * 10);
+             document.body.style.transform = `translate(${shake}px, ${shake}px)`;
+        } else {
+            document.body.style.transform = "none";
+        }
+        
+        const container = document.getElementById('glitch-container');
+        if(t > 0.2 && meters < 20000) {
+            container.style.display = 'block';
+            const strips = document.getElementsByClassName('glitch-strip');
+            for(let s of strips) {
+                if(Math.random() < t) {
+                    s.style.display = 'block';
+                    s.style.top = Math.random() * 100 + '%';
+                    s.style.height = Math.random() * 10 + '%';
+                    s.style.opacity = Math.random();
+                } else {
+                    s.style.display = 'none';
+                }
+            }
+        } else {
+            container.style.display = 'none';
+        }
 
-    if (b.offsetY > 0 || b.velY > 0) { b.velY -= 0.1; b.offsetY += b.velY; if (b.offsetY <= 0) { b.offsetY = 0; b.velY = 0; } }
-    else { b.offsetY = 0; b.velY = 0; if (state.input.jump && saveData.upgrades.hasJump && (now - state.lastJumpTime > CONFIG.jumpCooldown)) { b.velY = CONFIG.jumpForce; state.lastJumpTime = now; } }
+        if (meters > 19750) {
+            state.terrainChunks.forEach(c => c.visible = false);
+            state.rocks.forEach(r => r.mesh.visible = false);
+            
+            if (!state.endingTriggered) {
+                 state.endingTriggered = true;
+                 SoundManager.stop();
+                 
+                 setTimeout(() => {
+                     document.getElementById('ui-layer').style.opacity = 0;
+                     document.getElementById('hud-buttons').style.opacity = 0;
+                     document.getElementById('controls-hint').style.opacity = 0;
+                     document.getElementById('glitch-container').style.display = 'none'; 
+                     document.getElementById('credits-screen').style.display = 'flex';
+                     
+                     setTimeout(() => { 
+                         document.getElementById('credits-screen').style.opacity = 1; 
+                         document.getElementById('credits-content').classList.add('credits-scroll-anim');
+                     }, 100);
+                     
+                     // Scroll Credits & Stop at center logic
+                     const creditsContent = document.getElementById('credits-content');
+                     const creditsEnd = document.querySelector('.credits-end');
+                     
+                     const checkCredits = setInterval(() => {
+                         const endRect = creditsEnd.getBoundingClientRect();
+                         const screenHeight = window.innerHeight;
+                         
+                         // Stop when VIBE HUB is near middle
+                         if (endRect.top <= (screenHeight / 2) + 50) {
+                             clearInterval(checkCredits);
+                             creditsContent.style.animationPlayState = 'paused'; 
+                             
+                             setTimeout(() => {
+                                 document.body.style.backgroundColor = "black";
+                                 document.getElementById('credits-screen').style.opacity = 0;
+                                 setTimeout(() => location.reload(), 3000);
+                             }, 5000);
+                         }
+                     }, 50);
+                     
+                 }, 5000);
+            }
+        }
+    } else {
+        state.glitchOffset = 0;
+        document.body.style.transform = "none";
+        document.getElementById('glitch-container').style.display = 'none';
+    }
+
+    if (b.offsetY > 0 || b.velY > 0) { 
+        b.velY -= 0.1; 
+        b.offsetY += b.velY; 
+        
+        if (state.input.jump && !state.input.jumpHeld && saveData.upgrades.jump >= 22 && state.bike.jumpsRemaining > 0) {
+            b.velY = CONFIG.jumpForce; 
+            state.bike.jumpsRemaining--;
+            state.input.jumpHeld = true; 
+        }
+
+        if (b.offsetY <= 0) { 
+            b.offsetY = 0; 
+            b.velY = 0; 
+            state.bike.jumpsRemaining = 0; 
+        } 
+    } else {
+        b.offsetY = 0; 
+        b.velY = 0; 
+        
+        if (state.input.jump && !state.input.jumpHeld && saveData.upgrades.jump >= 1) {
+            let cdReduction = 0;
+            if (saveData.upgrades.jump >= 12) {
+                cdReduction = (Math.min(21, saveData.upgrades.jump) - 11) * 100;
+            }
+            const cooldown = Math.max(0, CONFIG.jumpCooldown - cdReduction);
+
+            if (now - state.lastJumpTime > cooldown) {
+                let extraHeight = 0;
+                if (saveData.upgrades.jump >= 2) {
+                    extraHeight = (Math.min(11, saveData.upgrades.jump) - 1) * 0.1;
+                }
+                
+                b.velY = CONFIG.jumpForce + extraHeight;
+                state.lastJumpTime = now;
+                
+                if (saveData.upgrades.jump >= 22) {
+                    state.bike.jumpsRemaining = 1;
+                } else {
+                    state.bike.jumpsRemaining = 0;
+                }
+                state.input.jumpHeld = true;
+            }
+        }
+    }
+    
+    if (!state.input.jump) state.input.jumpHeld = false;
 
     b.y = terrain.y + b.offsetY;
     if (b.offsetY > 0) b.angle *= 0.95; else b.angle = terrain.angle;
@@ -880,8 +1321,8 @@ function updatePhysics() {
 
     const limit = CONFIG.roadWidth / 2 - 2; if (b.z < -limit) b.z = -limit; if (b.z > limit) b.z = limit;
 
-    const friction = CONFIG.baseFriction + (saveData.upgrades.aero - 1) * 0.002;
-    b.vx *= friction; if (b.vx < 0) b.vx = 0;
+    const frictionBase = CONFIG.baseFriction + (saveData.upgrades.aero - 1) * 0.002;
+    b.vx *= frictionBase; if (b.vx < 0) b.vx = 0;
 
     const distBonusKmh = Math.floor((b.x / 10) / 500);
     const sLvl = saveData.upgrades.speed;
@@ -909,7 +1350,11 @@ function updatePhysics() {
         r.mesh.rotation.x -= r.vz / r.radius; 
         if (r.mesh.visible && Math.abs(b.x - r.x) < 3 && Math.abs(b.z - r.z) < 3 && b.offsetY < 2) {
              const spd = b.vx * CONFIG.physicsRatio;
-             if (spd >= (saveData.upgrades.hasTires ? 30 : 20)) hitObstacle("Hit a rolling boulder!", r.mesh); else b.vx *= 0.5;
+             let safeSpeed = 20; 
+             if (saveData.upgrades.tires >= 1) {
+                 safeSpeed = 30 + (saveData.upgrades.tires - 1);
+             }
+             if (spd >= safeSpeed) hitObstacle("Hit a rolling boulder!", r.mesh); else b.vx *= 0.5;
         }
     });
 
@@ -928,11 +1373,15 @@ function updatePhysics() {
         }
     });
 
-    const safeRockSpeed = saveData.upgrades.hasTires ? 30 : 20;
+    let rockSafeSpeed = 20;
+    if (saveData.upgrades.tires >= 1) {
+        rockSafeSpeed = 30 + (saveData.upgrades.tires - 1);
+    }
+
     if (b.offsetY < 2) {
         for (const r of state.rocks) {
             if (r.mesh.visible && Math.sqrt((b.x - r.x)**2 + (b.z - r.z)**2) < r.radius + 1) {
-                if (b.vx * CONFIG.physicsRatio >= safeRockSpeed) hitObstacle("You hit a rock!", r.mesh); else b.vx *= 0.5;
+                if (b.vx * CONFIG.physicsRatio >= rockSafeSpeed) hitObstacle("You hit a rock!", r.mesh); else b.vx *= 0.5;
             }
         }
     }
@@ -988,7 +1437,6 @@ function updateVisuals() {
     speedoContext.textAlign = 'center'; speedoContext.fillText(speedKmh + " KM/H", 64, 42);
     speedoTexture.needsUpdate = true;
 
-    // Shake Logic
     let sX = 0, sY = 0;
     if (speedKmh > 20 && state.bike.offsetY <= 0) {
         const i = (speedKmh / 40) * 0.15;
@@ -996,16 +1444,10 @@ function updateVisuals() {
         if (state.input.brake) sY += (Math.random() - 0.5) * 0.2;
     }
 
-    // --- NEW RIGID CAMERA LOGIC ---
-    // Instead of fixed offsets, we rotate the camera offset by the bike's pitch angle
-    // so it stays "attached" to the rider's head position relative to the frame.
-    
     const angle = state.bike.angle;
     const cosA = Math.cos(angle);
     const sinA = Math.sin(angle);
 
-    // Offset: X=1 (slightly back/forward), Y=5 (height)
-    // Rotate 2D vector (1, 5)
     const camOffsetX = 1 * cosA - 5 * sinA;
     const camOffsetY = 1 * sinA + 5 * cosA;
 
@@ -1013,9 +1455,16 @@ function updateVisuals() {
     camera.position.y = state.bike.y + camOffsetY + sY;
     camera.position.z = state.bike.z + sX;
 
-    // Look Target: 50 units forward relative to bike pitch
+    if(state.bike.x > 180000) { 
+        camera.fov = 60 + ((state.bike.x - 180000) / 20000) * 20; 
+        camera.updateProjectionMatrix();
+    } else {
+        camera.fov = 60;
+        camera.updateProjectionMatrix();
+    }
+
     const lookDist = 50;
-    const lookOffsetX = lookDist * cosA - 4 * sinA; // Look at height 4 relative to bike
+    const lookOffsetX = lookDist * cosA - 4 * sinA; 
     const lookOffsetY = lookDist * sinA + 4 * cosA;
 
     camera.lookAt(
@@ -1024,11 +1473,9 @@ function updateVisuals() {
         state.bike.z * 0.5
     );
 
-    // Apply Camera Roll (Tilt into turn)
     camera.rotation.z += state.bike.steerAngle * 0.15; 
 }
 
-// AI Lag Detection
 function checkPerformance() {
     const now = performance.now();
     const delta = now - state.fps.lastTime;
@@ -1048,7 +1495,6 @@ function checkPerformance() {
     state.fps.frames++;
 }
 
-// UI
 function setDifficulty(diff) {
     currentDiff = diff;
     document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
@@ -1058,74 +1504,192 @@ function setDifficulty(diff) {
 function updateShopUI() {
     document.getElementById('shop-coins').innerText = saveData.coins;
     document.getElementById('coin-display').innerText = saveData.coins;
-    const setBtn = (id, lvl, cost, max) => {
+    const setBtn = (id, lvl, cost, max, isUnlock) => {
         const btn = document.getElementById(id);
         const lbl = document.getElementById('lvl-' + id.split('-')[1]);
-        if (lbl) lbl.innerText = `Lvl ${lvl}`;
-        if (lvl >= max) { btn.innerText = "MAX"; btn.disabled = true; btn.style.background = "#888"; }
-        else { btn.innerText = cost; btn.disabled = saveData.coins < cost; }
+        if (lbl && !isUnlock) lbl.innerText = `Lvl ${lvl}`;
+        
+        // Reset styles
+        btn.style.background = "#f9cb28";
+        btn.style.color = "black";
+        btn.style.cursor = "pointer";
+        btn.disabled = false;
+
+        if (lvl >= max) { 
+            btn.innerText = "MAX"; 
+            btn.disabled = true; 
+            btn.style.background = "#888"; 
+            btn.style.cursor = "not-allowed";
+        } else {
+            let isOwnedOneTime = false;
+            
+            if (isUnlock && lvl === 0) {
+                 btn.innerText = `Unlock ${cost}`;
+            } else if (isUnlock && lvl >= 1) {
+                 if (max > 1) {
+                    btn.innerText = `Upgrade ${cost}`;
+                 } else { 
+                    btn.innerText = "OWNED"; 
+                    btn.disabled = true; 
+                    btn.style.background = "#4cd137"; 
+                    isOwnedOneTime = true;
+                 }
+            } else {
+                 btn.innerText = cost;
+            }
+            
+            if (!isOwnedOneTime) {
+                if (saveData.coins < cost) {
+                    btn.disabled = true;
+                    btn.style.background = "#555";
+                    btn.style.color = "#888";
+                    btn.style.cursor = "not-allowed";
+                }
+            }
+        }
     };
-    setBtn('btn-fuel', saveData.upgrades.fuel, 250 * saveData.upgrades.fuel, 999);
-    setBtn('btn-handling', saveData.upgrades.handling, 250 * saveData.upgrades.handling, 5);
-    setBtn('btn-speed', saveData.upgrades.speed, 250 * saveData.upgrades.speed, 10);
-    setBtn('btn-aero', saveData.upgrades.aero, 300 * saveData.upgrades.aero, 5);
-    const unlock = (id, k, c) => {
-        const b = document.getElementById(id);
-        if (saveData.upgrades[k]) { b.innerText = "OWNED"; b.disabled = true; b.style.background = "#4cd137"; }
-        else { b.innerText = c; b.disabled = saveData.coins < c; }
-    };
-    unlock('btn-jump', 'hasJump', 2000); unlock('btn-tires', 'hasTires', 2500); 
-    unlock('btn-magnet', 'hasMagnet', 1500); unlock('btn-regen', 'hasRegen', 5000);
+
+    setBtn('btn-fuel', saveData.upgrades.fuel, 250 * saveData.upgrades.fuel, 999, false);
+    setBtn('btn-handling', saveData.upgrades.handling, 250 * saveData.upgrades.handling, 5, false);
+    setBtn('btn-speed', saveData.upgrades.speed, 250 * saveData.upgrades.speed, 20, false); 
+    setBtn('btn-aero', saveData.upgrades.aero, 300 * saveData.upgrades.aero, 20, false); 
+
+    let tireCost = (saveData.upgrades.tires === 0) ? 2500 : 250;
+    setBtn('btn-tires', saveData.upgrades.tires, tireCost, 20, true);
+
+    let magCost = (saveData.upgrades.magnet === 0) ? 1500 : 250;
+    setBtn('btn-magnet', saveData.upgrades.magnet, magCost, 20, true);
+
+    // Jump
+    let jumpCost = 0;
+    if (saveData.upgrades.jump === 0) jumpCost = 2000;
+    else if (saveData.upgrades.jump < 21) jumpCost = 250;
+    else jumpCost = 5000;
+    
+    const btnJ = document.getElementById('btn-jump');
+    // Reset jump
+    btnJ.style.background = "#f9cb28";
+    btnJ.style.color = "black";
+    btnJ.style.cursor = "pointer";
+    btnJ.disabled = false;
+
+    if (saveData.upgrades.jump >= 22) {
+        btnJ.innerText = "MAX"; 
+        btnJ.disabled = true; 
+        btnJ.style.background = "#888";
+        btnJ.style.cursor = "not-allowed";
+    } else {
+        if (saveData.upgrades.jump === 0) btnJ.innerText = "Unlock 2000";
+        else if (saveData.upgrades.jump < 11) btnJ.innerText = "Height 250";
+        else if (saveData.upgrades.jump < 21) btnJ.innerText = "Cool 250";
+        else btnJ.innerText = "Multi 5000";
+        
+        if (saveData.coins < jumpCost) {
+            btnJ.disabled = true;
+            btnJ.style.background = "#555";
+            btnJ.style.color = "#888";
+            btnJ.style.cursor = "not-allowed";
+        }
+    }
+
+    let regenCost = 5000;
+    setBtn('btn-regen', saveData.upgrades.regen, regenCost, 1, true);
 }
 
-// NEW FUNCTION ADDED
 function upgradeAll() {
     let purchased = true;
     while (purchased) {
         purchased = false;
-        // Define upgrade types, dynamic costs, and max levels
-        const upgrades = [
-            { id: 'fuel', cost: 250 * saveData.upgrades.fuel, max: 999 },
-            { id: 'handling', cost: 250 * saveData.upgrades.handling, max: 5 },
-            { id: 'speed', cost: 250 * saveData.upgrades.speed, max: 10 },
-            { id: 'aero', cost: 300 * saveData.upgrades.aero, max: 5 }
-        ];
+        const options = [];
+        options.push({ type: 'fuel', cost: 250 * saveData.upgrades.fuel, current: saveData.upgrades.fuel, max: 999 });
+        options.push({ type: 'handling', cost: 250 * saveData.upgrades.handling, current: saveData.upgrades.handling, max: 5 });
+        options.push({ type: 'speed', cost: 250 * saveData.upgrades.speed, current: saveData.upgrades.speed, max: 20 });
+        options.push({ type: 'aero', cost: 300 * saveData.upgrades.aero, current: saveData.upgrades.aero, max: 20 });
+        
+        let tireCost = (saveData.upgrades.tires === 0) ? 2500 : 250;
+        options.push({ type: 'tires', cost: tireCost, current: saveData.upgrades.tires, max: 20 });
+        
+        let magCost = (saveData.upgrades.magnet === 0) ? 1500 : 250;
+        options.push({ type: 'magnet', cost: magCost, current: saveData.upgrades.magnet, max: 20 });
 
-        // Filter for upgrades we can afford and aren't maxed
-        const affordable = upgrades.filter(u => 
-            saveData.coins >= u.cost && saveData.upgrades[u.id] < u.max
-        );
+        let jumpCost = 0;
+        if (saveData.upgrades.jump === 0) jumpCost = 2000;
+        else if (saveData.upgrades.jump < 21) jumpCost = 250;
+        else jumpCost = 5000;
+        options.push({ type: 'jump', cost: jumpCost, current: saveData.upgrades.jump, max: 22 });
+
+        options.push({ type: 'regen', cost: 5000, current: saveData.upgrades.regen, max: 1 });
+
+        const affordable = options.filter(o => saveData.coins >= o.cost && o.current < o.max);
 
         if (affordable.length > 0) {
-            // Sort by cost (buy cheapest first to maximize upgrades)
             affordable.sort((a, b) => a.cost - b.cost);
-            
             const target = affordable[0];
             saveData.coins -= target.cost;
-            saveData.upgrades[target.id]++;
-            purchased = true; // Continue loop
+            saveData.upgrades[target.type]++;
+            purchased = true;
         }
     }
     saveGame();
 }
 
 function buyUpgrade(type) {
-    const costMap = { fuel: 250, handling: 250, speed: 250, aero: 300 };
-    if (['fuel', 'handling', 'speed', 'aero'].includes(type)) {
-        const lvl = saveData.upgrades[type]; const cost = costMap[type] * lvl;
-        const max = (type === 'handling' || type === 'aero') ? 5 : (type === 'speed' ? 10 : 999);
-        if (saveData.coins >= cost && lvl < max) { saveData.coins -= cost; saveData.upgrades[type]++; saveGame(); }
-    } else {
-        const u = { jump: 2000, tires: 2500, magnet: 1500, regen: 5000 }; 
-        const k = { jump: 'hasJump', tires: 'hasTires', magnet: 'hasMagnet', regen: 'hasRegen' };
-        if (saveData.coins >= u[type] && !saveData.upgrades[k[type]]) { saveData.coins -= u[type]; saveData.upgrades[k[type]] = true; saveGame(); }
+    if (type === 'fuel' || type === 'handling' || type === 'speed' || type === 'aero') {
+        const costMap = { fuel: 250, handling: 250, speed: 250, aero: 300 };
+        const maxMap = { fuel: 999, handling: 5, speed: 20, aero: 20 };
+        const lvl = saveData.upgrades[type];
+        const cost = costMap[type] * lvl;
+        if (saveData.coins >= cost && lvl < maxMap[type]) {
+            saveData.coins -= cost;
+            saveData.upgrades[type]++;
+            saveGame();
+        }
+    } 
+    else if (type === 'tires') {
+        const cost = (saveData.upgrades.tires === 0) ? 2500 : 250;
+        if (saveData.coins >= cost && saveData.upgrades.tires < 20) {
+            saveData.coins -= cost;
+            saveData.upgrades.tires++;
+            saveGame();
+        }
+    }
+    else if (type === 'magnet') {
+        const cost = (saveData.upgrades.magnet === 0) ? 1500 : 250;
+        if (saveData.coins >= cost && saveData.upgrades.magnet < 20) {
+            saveData.coins -= cost;
+            saveData.upgrades.magnet++;
+            saveGame();
+        }
+    }
+    else if (type === 'jump') {
+        let cost = 0;
+        if (saveData.upgrades.jump === 0) cost = 2000;
+        else if (saveData.upgrades.jump < 21) cost = 250;
+        else cost = 5000;
+        
+        if (saveData.coins >= cost && saveData.upgrades.jump < 22) {
+            saveData.coins -= cost;
+            saveData.upgrades.jump++;
+            saveGame();
+        }
+    }
+    else if (type === 'regen') {
+        if (saveData.coins >= 5000 && saveData.upgrades.regen === 0) {
+            saveData.coins -= 5000;
+            saveData.upgrades.regen = 1;
+            saveGame();
+        }
     }
 }
 
 function openShop() { document.getElementById('game-over').style.display = 'none'; document.getElementById('shop-menu').style.display = 'block'; updateShopUI(); }
-function startGame() { document.getElementById('shop-menu').style.display = 'none'; resetGame(); }
+function startGame() { 
+    SoundManager.init(); 
+    document.getElementById('shop-menu').style.display = 'none'; 
+    resetGame(); 
+}
 function crash(reason) { state.running = false; document.getElementById('go-title').innerText = "CRASHED"; document.getElementById('go-title').style.color = "red"; endGame(reason); }
-function endGame(msg) { state.running = false; saveGame(); document.getElementById('final-score').innerText = Math.floor(state.bike.x / 10); document.getElementById('run-coins').innerText = state.coinsCollectedRun; const go = document.getElementById('game-over'); go.querySelector('h1').innerText = msg || "GAME OVER"; go.style.display = 'block'; }
+function endGame(msg) { state.running = false; SoundManager.stop(); saveGame(); document.getElementById('final-score').innerText = Math.floor(state.bike.x / 10); document.getElementById('run-coins').innerText = state.coinsCollectedRun; const go = document.getElementById('game-over'); go.querySelector('h1').innerText = msg || "GAME OVER"; go.style.display = 'block'; }
 
 function updateUI() {
     document.getElementById('score').innerText = Math.floor(state.bike.x / 10);
@@ -1140,6 +1704,19 @@ function handleKey(e, isDown) {
     const c = e.code, k = e.key;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', ' '].includes(c) || ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(k)) e.preventDefault();
     if (isDown && (c === 'KeyC' || k.toLowerCase() === 'c')) { saveData.coins += 10000; updateShopUI(); document.getElementById('coin-display').innerText = saveData.coins; }
+    
+    if (isDown && (c === 'KeyV' || k.toLowerCase() === 'v')) {
+        debugMode = (debugMode + 1) % 4;
+        let newX = 0;
+        if(debugMode === 1) newX = 25000; 
+        if(debugMode === 2) newX = 155000; 
+        if(debugMode === 3) newX = 180000; 
+        state.bike.x = newX;
+        state.generation = { lastX: newX, lastY: state.bike.y, currentSlope: 0.5, targetSlope: 0.5, segmentRemaining: 1500 };
+        document.body.style.filter = "none";
+        document.body.style.transform = "none";
+    }
+
     if (c === 'KeyW' || c === 'ArrowUp' || k === 'ArrowUp') state.input.gas = isDown;
     if (c === 'KeyS' || c === 'ArrowDown' || k === 'ArrowDown') state.input.brake = isDown;
     if (c === 'KeyA' || c === 'ArrowLeft' || k === 'ArrowLeft') state.input.left = isDown;
@@ -1153,26 +1730,77 @@ function resetGame() {
     state.bike.x = 0; state.bike.y = 0; state.bike.z = 0; state.bike.vx = 0; state.bike.offsetY = 0; state.bike.velY = 0; state.bike.steerAngle = 0;
     state.shield.active = false; shieldMesh.visible = false; document.getElementById('buff-shield').style.display = 'none';
     state.buffs = { magnet: 0, shield: 0, fuelRegen: 0 };
+    state.endingTriggered = false;
     document.querySelectorAll('.active-buff').forEach(el => el.style.display = 'none');
+    document.getElementById('crash-screen').style.display = 'none';
+    document.body.style.filter = "none";
+    document.body.style.transform = "none";
+    state.glitchOffset = 0;
     
-    const maxF = CONFIG.baseMaxFuel * (1 + (saveData.upgrades.fuel - 1) * 0.2); state.bike.fuel = maxF;
+    // UI Reset
+    document.getElementById('ui-layer').style.opacity = 1;
+    document.getElementById('hud-buttons').style.opacity = 1;
+    document.getElementById('controls-hint').style.opacity = 1;
+    document.getElementById('credits-screen').style.display = 'none';
+    document.getElementById('credits-screen').style.opacity = 0;
+    document.getElementById('credits-content').classList.remove('credits-scroll-anim');
+    
+    // Clear falling debris
+    state.fallingDebris = [];
+
+    // Correctly apply upgraded fuel capacity
+    const maxF = getFuelCapacity();
+    state.bike.fuel = maxF;
+    
     state.generation = { lastX: 0, lastY: 0, currentSlope: 0.5, targetSlope: 0.5, segmentRemaining: 1500 };
     
     state.terrainChunks.forEach(c => { scene.remove(c); c.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) { if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); }}); });
     state.terrainChunks = [];
-    const wipe = (arr) => { arr.forEach(o => scene.remove(o.mesh)); return []; };
+    const wipe = (arr) => { arr.forEach(o => { scene.remove(o.mesh); if(o.mesh.geometry) o.mesh.geometry.dispose(); }); return []; };
     state.rocks = wipe(state.rocks); state.coins = wipe(state.coins); state.rollingRocks = wipe(state.rollingRocks); state.cars = wipe(state.cars);
     state.trees = wipe(state.trees); state.tractors = wipe(state.tractors); state.pickups = wipe(state.pickups);
     
     document.getElementById('game-over').style.display = 'none';
     state.fps.lastTime = performance.now();
+    renderer.clear();
 }
 
 function animate() { 
     requestAnimationFrame(animate); 
     checkPerformance();
     if(state.running) { updateTerrain3D(); updatePhysics(); } 
-    updateVisuals(); updateUI(); renderer.render(scene, camera); 
+    updateVisuals(); updateUI(); 
+
+    if (state.glitchOffset > 0) {
+        const gl = renderer.getContext();
+        const originalX = camera.position.x;
+        
+        renderer.autoClear = false;
+        renderer.clear();
+        
+        // Red Channel (Left)
+        camera.position.x = originalX - state.glitchOffset;
+        gl.colorMask(true, false, false, true);
+        renderer.render(scene, camera);
+        renderer.clearDepth(); 
+
+        // Blue Channel (Right)
+        camera.position.x = originalX + state.glitchOffset;
+        gl.colorMask(false, false, true, true);
+        renderer.render(scene, camera);
+        renderer.clearDepth();
+
+        // Green Channel (Center)
+        camera.position.x = originalX;
+        gl.colorMask(false, true, false, true);
+        renderer.render(scene, camera);
+        
+        // Reset
+        gl.colorMask(true, true, true, true);
+        renderer.autoClear = false; // keep manual clearing
+    } else {
+        renderer.render(scene, camera);
+    }
 }
 initThree(); animate();
 </script>
