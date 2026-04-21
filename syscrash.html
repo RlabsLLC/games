@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,13 +68,9 @@
             animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
         }
         
-        .emote-float-up { animation: floatUp 2s ease-out forwards; }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+        .emote-float-up { animation: floatUp 4s ease-out forwards; }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
 
-        .emote-float-down { animation: floatDown 2s ease-out forwards; }
-        @keyframes floatDown { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(50px); opacity: 0; } }
-
-        /* Pulse Animation for System Crash */
         @keyframes emergency-pulse {
             0%, 100% { box-shadow: 0 0 20px 10px rgba(220, 38, 38, 0.5); transform: scale(1); }
             50% { box-shadow: 0 0 40px 20px rgba(220, 38, 38, 0.8); transform: scale(1.05); }
@@ -84,11 +79,59 @@
             animation: emergency-pulse 1s infinite;
         }
 
+        @keyframes shrink-width {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .timer-bar {
+            animation: shrink-width 3s linear forwards;
+        }
+        
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; background: #4ade80; cursor: pointer; margin-top: -8px; box-shadow: 2px 2px 0px 0px #000; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px; }
+
+        /* --- GLOWING NAME EFFECTS --- */
+        .name-owner-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        .name-owner-text {
+            background: linear-gradient(to right, #e879f9, #c084fc, #a855f7, #c084fc, #e879f9);
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: gradient-x 2s linear infinite;
+            filter: drop-shadow(0px 0px 4px rgba(192, 132, 252, 0.8));
+            background-size: 200% 100%;
+        }
+        @keyframes gradient-x {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+        .name-owner-container::before, .name-owner-container::after {
+            content: '✦';
+            position: absolute;
+            color: #d8b4fe;
+            font-size: 8px;
+            text-shadow: 0 0 5px #c084fc;
+            animation: float-around 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .name-owner-container::after {
+            animation-delay: -1.5s;
+            animation-direction: reverse;
+        }
+        @keyframes float-around {
+            0% { transform: translate(-20px, -10px) scale(0.8); opacity: 0.8; }
+            33% { transform: translate(20px, -15px) scale(1.2); opacity: 1; }
+            66% { transform: translate(15px, 10px) scale(0.6); opacity: 0.5; }
+            100% { transform: translate(-20px, -10px) scale(0.8); opacity: 0.8; }
+        }
     </style>
 </head>
 <body class="h-screen w-screen relative overflow-hidden crt bg-slate-900">
@@ -96,19 +139,16 @@
     <!-- GAME CONTAINER -->
     <div id="app" class="h-full w-full flex flex-col items-center justify-center relative z-10">
         
-        <!-- === UI: AUTH SCREEN === -->
+        <!-- AUTH SCREEN -->
         <div id="auth-screen" class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-[60]">
             <h1 class="text-3xl md:text-5xl text-green-400 pixel-font mb-8 text-center glitch">SYSTEM LOGIN</h1>
             
-            <!-- Main Buttons -->
             <div id="auth-buttons" class="flex flex-col gap-4 w-64">
                 <button onclick="showLogin()" class="bg-blue-600 hover:bg-blue-500 text-black py-3 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg pixel-font transition">LOGIN</button>
                 <button onclick="showSignup()" class="bg-purple-600 hover:bg-purple-500 text-white py-3 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg pixel-font transition">SIGN UP</button>
                 <button onclick="guestLogin()" class="bg-slate-600 hover:bg-slate-500 text-white py-2 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-sm pixel-font transition mt-4">GUEST MODE</button>
-                <div id="loading-msg" class="text-yellow-400 text-center text-xs pixel-font mt-4 hidden animate-pulse">CONNECTING TO CLOUD...</div>
             </div>
 
-            <!-- Login Form -->
             <div id="login-form" class="hidden flex-col gap-4 w-72">
                 <input type="text" id="login-user" placeholder="USERNAME" class="bg-slate-800 border-2 border-blue-500 text-white p-3 pixel-font text-sm">
                 <input type="password" id="login-pass" placeholder="PASSWORD" class="bg-slate-800 border-2 border-blue-500 text-white p-3 pixel-font text-sm">
@@ -116,19 +156,19 @@
                 <button onclick="showAuthButtons()" class="text-slate-500 text-xs pixel-font hover:text-white">BACK</button>
             </div>
 
-            <!-- Signup Form -->
             <div id="signup-form" class="hidden flex-col gap-4 w-72">
                 <input type="text" id="signup-user" placeholder="NEW USERNAME" maxlength="12" class="bg-slate-800 border-2 border-purple-500 text-white p-3 pixel-font text-sm">
                 <input type="password" id="signup-pass" placeholder="PASSWORD" class="bg-slate-800 border-2 border-purple-500 text-white p-3 pixel-font text-sm">
                 <button onclick="performSignup()" class="bg-green-600 hover:bg-green-500 text-black py-3 rounded font-bold pixel-font">CREATE</button>
                 <button onclick="showAuthButtons()" class="text-slate-500 text-xs pixel-font hover:text-white">BACK</button>
             </div>
+            
+            <div id="loading-msg" class="text-yellow-400 text-center text-sm pixel-font mt-8 hidden animate-pulse z-[70]">CONNECTING TO DATABASE...</div>
         </div>
 
-        <!-- === UI: MAIN MENU === -->
+        <!-- MAIN MENU -->
         <div id="main-menu" class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-50 hidden">
             <h1 class="text-4xl md:text-6xl text-green-400 pixel-font mb-4 text-center glitch">SYSTEM CRASH</h1>
-            
             <div class="bg-slate-800 border border-slate-600 p-4 rounded mb-6 w-72 text-center relative">
                 <div id="save-indicator" class="absolute top-2 right-2 text-[10px] text-green-500 opacity-0 transition-opacity duration-500 pixel-font">SAVED</div>
                 <div class="pixel-font text-xl text-white mb-2" id="menu-username">GUEST</div>
@@ -136,34 +176,44 @@
                     <span>LVL <span id="menu-level">1</span></span>
                     <span>XP <span id="menu-xp">0</span>/<span id="menu-xp-next">100</span></span>
                 </div>
-                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden mb-2">
                     <div id="xp-bar" class="bg-yellow-500 h-full w-0 transition-all duration-500"></div>
                 </div>
+                <!-- NEW BITS CURRENCY DISPLAY -->
+                <div class="flex justify-center items-center text-xs text-yellow-400 pixel-font mt-2">
+                    <i class="fas fa-coins mr-2"></i> <span id="menu-bits">0</span> BITS
+                </div>
             </div>
+            <div class="space-y-4 flex flex-col w-72">
+                <button onclick="startGame('single')" class="bg-green-600 hover:bg-green-500 text-black py-4 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg pixel-font transition">SOLO RUN</button>
+                <button onclick="showMultiplayerMenu()" class="bg-blue-600 hover:bg-blue-500 text-black py-4 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg pixel-font transition">MULTIPLAYER</button>
+                
+                <!-- NEW HUB BUTTONS -->
+                <div class="flex gap-2 w-full mt-2">
+                    <button onclick="showLeaderboard()" class="flex-1 bg-yellow-600 hover:bg-yellow-500 text-black py-2 rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold text-xs pixel-font transition"><i class="fas fa-trophy block mb-1 text-lg"></i>RANKS</button>
+                    <button onclick="showDaily()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-black py-2 rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold text-xs pixel-font transition"><i class="fas fa-calendar-check block mb-1 text-lg"></i>DAILY</button>
+                    <button onclick="showPass()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-2 rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold text-xs pixel-font transition"><i class="fas fa-ticket-alt block mb-1 text-lg"></i>PASS</button>
+                </div>
 
-            <div class="space-y-4 flex flex-col w-64">
-                <button onclick="startGame('single')" class="bg-green-600 hover:bg-green-500 text-black py-4 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg pixel-font transition">
-                    <i class="fas fa-user mr-2"></i>SOLO RUN
-                </button>
-                <button onclick="showMultiplayerMenu()" class="bg-blue-600 hover:bg-blue-500 text-black py-4 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg pixel-font transition">
-                    <i class="fas fa-users mr-2"></i>MULTIPLAYER
-                </button>
-                <button onclick="logout()" class="text-xs text-slate-500 hover:text-red-400 underline pt-4">
-                    LOGOUT
-                </button>
+                <button onclick="logout()" class="text-xs text-slate-500 hover:text-red-400 underline pt-4">LOGOUT</button>
             </div>
-            <p class="mt-4 text-slate-500 text-xs">v3.1.1 | MP Draw Patch</p>
+            <p class="mt-4 text-slate-500 text-xs">v4.0.0 | Cloud Hub Integration</p>
         </div>
 
-        <!-- === UI: MULTIPLAYER LOBBY === -->
+        <!-- MULTIPLAYER LOBBY -->
         <div id="lobby-menu" class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-50 hidden">
             <h2 class="text-3xl text-blue-400 pixel-font mb-4">NET LOBBY</h2>
-            
             <div id="lobby-controls" class="space-y-4 flex flex-col w-80 text-center bg-slate-800 p-6 rounded-lg border border-slate-700">
                 <div class="mb-4 border-b border-slate-600 pb-4">
                     <label class="block text-green-400 pixel-font text-xs mb-2">MAX PLAYERS: <span id="max-players-val" class="text-white">4</span></label>
-                    <input type="range" id="max-players-input" min="2" max="24" value="4" class="w-full" oninput="document.getElementById('max-players-val').innerText = this.value">
+                    <input type="range" id="max-players-input" min="2" max="50" value="4" class="w-full" oninput="document.getElementById('max-players-val').innerText = this.value">
                 </div>
+                <!-- Chat Toggle -->
+                <div id="host-options" class="flex items-center justify-center gap-2 mb-2 hidden">
+                    <input type="checkbox" id="chat-enabled-check" class="w-4 h-4 cursor-pointer accent-green-600">
+                    <label for="chat-enabled-check" class="text-xs text-green-400 pixel-font cursor-pointer">ENABLE CHAT (EXP)</label>
+                </div>
+
                 <button id="btn-public-match" onclick="findPublicRoom()" class="bg-yellow-500 hover:bg-yellow-400 text-black py-3 px-6 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg pixel-font w-full animate-pulse">FIND PUBLIC MATCH</button>
                 <p id="guest-lock-msg" class="text-[10px] text-red-400 hidden">ACCOUNTS ONLY</p>
                 <div class="flex items-center justify-between text-slate-500 text-xs pixel-font my-2"><span>-- OR --</span></div>
@@ -174,8 +224,7 @@
                 </div>
                 <button onclick="backToMain()" class="text-slate-400 hover:text-white mt-4 underline text-xs">Return to Menu</button>
             </div>
-
-            <!-- WAITING ROOM -->
+            <!-- Waiting Room -->
             <div id="waiting-room" class="hidden flex flex-col items-center w-full max-w-md">
                 <div class="bg-slate-800 p-6 rounded-lg border-2 border-green-500 w-full mb-4 relative">
                     <span id="room-type-badge" class="absolute top-2 right-2 text-[10px] bg-slate-700 text-slate-300 px-2 rounded pixel-font">PRIVATE</span>
@@ -194,10 +243,54 @@
             </div>
         </div>
 
-        <!-- === UI: GAME BOARD === -->
+        <!-- NEW HUB MODALS -->
+        
+        <!-- LEADERBOARD MODAL -->
+        <div id="leaderboard-modal" class="absolute inset-0 bg-slate-900 bg-opacity-95 flex flex-col items-center justify-center z-[55] hidden">
+            <h2 class="text-3xl text-yellow-400 pixel-font mb-6"><i class="fas fa-trophy mr-2"></i>GLOBAL RANKS</h2>
+            <div class="bg-slate-800 border-2 border-yellow-500 rounded-lg p-4 w-11/12 max-w-md h-96 overflow-y-auto scrollbar-hide">
+                <table class="w-full text-white pixel-font text-[10px] md:text-xs text-left">
+                    <thead><tr class="text-slate-400 border-b border-slate-600"><th class="pb-2 w-8">#</th><th class="pb-2">USER</th><th class="pb-2 text-right">LVL</th><th class="pb-2 text-right">XP</th></tr></thead>
+                    <tbody id="leaderboard-list">
+                        <tr><td colspan="4" class="text-center py-4 text-slate-500 animate-pulse">FETCHING DATA...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="closeHubModals()" class="mt-6 text-slate-400 hover:text-white underline text-xs pixel-font">RETURN</button>
+        </div>
+
+        <!-- DAILY REWARDS MODAL -->
+        <div id="daily-modal" class="absolute inset-0 bg-slate-900 bg-opacity-95 flex flex-col items-center justify-center z-[55] hidden">
+            <h2 class="text-3xl text-cyan-400 pixel-font mb-2">DAILY LOGIN</h2>
+            <p class="text-slate-400 text-xs pixel-font mb-6">STREAK: <span id="daily-streak-text" class="text-white">0</span>/4</p>
+            <div class="flex gap-2 md:gap-4 mb-8" id="daily-cards-container">
+                <!-- Filled via JS -->
+            </div>
+            <button id="claim-daily-btn" onclick="claimDaily()" class="bg-cyan-600 hover:bg-cyan-500 text-black py-4 px-8 rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-xl pixel-font transition">CLAIM REWARD</button>
+            <button onclick="closeHubModals()" class="mt-6 text-slate-400 hover:text-white underline text-xs pixel-font">RETURN</button>
+        </div>
+
+        <!-- SEASON PASS MODAL -->
+        <div id="pass-modal" class="absolute inset-0 bg-slate-900 bg-opacity-95 flex flex-col items-center justify-center z-[55] hidden">
+            <h2 class="text-3xl text-purple-400 pixel-font mb-2">SYSTEM PASS</h2>
+            <div class="w-11/12 max-w-lg mb-6">
+                <div class="flex justify-between text-xs text-purple-300 pixel-font mb-1">
+                    <span>PASS LVL <span id="pass-level-text">1</span></span>
+                    <span><span id="pass-xp-text">0</span>/500 XP</span>
+                </div>
+                <div class="w-full bg-slate-800 h-4 rounded-full border border-purple-500 overflow-hidden">
+                    <div id="pass-xp-bar" class="bg-purple-500 h-full w-0 transition-all duration-500"></div>
+                </div>
+            </div>
+            <div class="bg-slate-800 border-2 border-purple-500 rounded-lg p-4 w-11/12 max-w-lg h-72 overflow-y-auto scrollbar-hide space-y-2" id="pass-tiers-container">
+                <!-- Filled via JS -->
+            </div>
+            <button onclick="closeHubModals()" class="mt-6 text-slate-400 hover:text-white underline text-xs pixel-font">RETURN</button>
+        </div>
+
+        <!-- GAME BOARD -->
         <div id="game-board" class="w-full h-full flex flex-col justify-between p-2 hidden relative bg-slate-900 bg-opacity-95">
-            
-            <!-- GLOBAL REVEAL MODAL -->
+            <!-- Reveal Overlay -->
             <div id="reveal-overlay" class="absolute inset-0 z-[90] flex items-center justify-center bg-black bg-opacity-80 hidden">
                 <div class="flex flex-col items-center">
                     <h2 class="text-red-500 pixel-font text-3xl mb-4 animate-pulse text-center">CRITICAL ALERT</h2>
@@ -210,6 +303,50 @@
                 </div>
             </div>
 
+            <!-- Interrupt Overlay -->
+            <div id="interrupt-overlay" class="absolute inset-0 z-[95] flex flex-col items-center justify-center bg-red-900 bg-opacity-90 hidden">
+                <h2 class="text-white pixel-font text-2xl mb-4 animate-pulse">INTERRUPT WINDOW</h2>
+                <div class="w-64 h-4 bg-black rounded mb-8 border border-white">
+                    <div class="timer-bar bg-white h-full w-full"></div>
+                </div>
+                <p id="interrupt-text" class="text-white pixel-font mb-8 text-center">PLAYER IS ATTEMPTING ACTION...</p>
+                <button id="btn-use-denied" onclick="playDeniedCard()" class="hidden bg-red-600 hover:bg-red-500 text-white py-4 px-8 rounded shadow-[4px_4px_0px_0px_#000] font-bold text-2xl pixel-font animate-bounce border-2 border-white">PLAY DENIED!</button>
+            </div>
+
+            <!-- Target Modal -->
+            <div id="target-modal" class="absolute inset-0 bg-black bg-opacity-90 z-[80] flex-col items-center justify-center hidden">
+                <h2 class="text-2xl text-yellow-400 pixel-font mb-4">SELECT TARGET</h2>
+                <div id="target-options" class="flex flex-col gap-2 w-64"></div>
+                <button onclick="closeTargetModal()" class="mt-8 text-slate-500 text-xs pixel-font">CANCEL</button>
+            </div>
+            
+            <!-- Chat Agreement Modal -->
+            <div id="chat-agree-modal" class="absolute inset-0 bg-black bg-opacity-95 z-[100] flex-col items-center justify-center hidden">
+                <div class="bg-slate-800 border-2 border-green-500 p-6 rounded-lg max-w-sm text-center">
+                    <h2 class="text-xl text-green-400 pixel-font mb-4">COMM PROTOCOL</h2>
+                    <p class="text-white text-sm mb-4 font-mono">By enabling chat, you agree to:</p>
+                    <ul class="text-slate-300 text-xs text-left mb-6 font-mono list-disc pl-4 space-y-2">
+                        <li>Be respectful to other units.</li>
+                        <li>Avoid spam or flooding.</li>
+                        <li>No harmful or illegal content.</li>
+                        <li>The Host may mute you at any time.</li>
+                    </ul>
+                    <div class="flex gap-4 justify-center">
+                        <button onclick="acceptChat()" class="bg-green-600 hover:bg-green-500 text-black py-2 px-4 rounded pixel-font text-xs">I AGREE</button>
+                        <button onclick="closeChatAgree()" class="bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded pixel-font text-xs">DECLINE</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hack Modal -->
+            <div id="hack-modal" class="absolute inset-0 bg-black bg-opacity-95 z-[85] flex-col items-center justify-center hidden">
+                <h2 class="text-2xl text-red-500 pixel-font mb-4">SYSTEM BREACH</h2>
+                <p class="text-green-400 text-xs mb-4">SELECT DATA TO STEAL:</p>
+                <div id="hack-cards" class="flex flex-wrap justify-center gap-2 max-w-2xl"></div>
+                <button onclick="closeHackModal()" class="mt-8 text-slate-500 text-xs pixel-font">CANCEL</button>
+            </div>
+
+            <!-- Game Area -->
             <div id="opponents-container" class="flex flex-wrap justify-center content-start gap-2 pt-2 h-1/4 w-full overflow-y-auto scrollbar-hide"></div>
 
             <div class="flex-1 flex items-center justify-center gap-4 md:gap-12 relative min-h-[150px]">
@@ -236,68 +373,50 @@
                     <div class="flex items-center gap-2 relative" id="player-info-area">
                         <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
                         <span id="player-name" class="font-bold text-green-400">UNIT_YOU</span>
-                        <div id="player-emote-container" class="absolute -top-10 left-0"></div>
+                        <!-- New Location for Interrupt Button -->
+                        <div id="local-interrupt-area" class="absolute -top-12 left-0 w-full flex justify-center hidden z-[85]">
+                             <button onclick="playDeniedCard()" class="bg-red-600 hover:bg-red-500 text-white py-1 px-3 rounded shadow-lg font-bold text-xs pixel-font animate-bounce border border-white">
+                                PLAY DENIED! <div class="w-full bg-black h-1 mt-1 rounded"><div class="timer-bar bg-white h-full w-full"></div></div>
+                             </button>
+                        </div>
+                        <div id="player-emote-container" class="absolute -top-24 left-0 z-[80]"></div>
                     </div>
                     <div class="flex gap-2 relative">
                         <button onclick="toggleReportMenu()" class="bg-red-700 p-2 rounded-full hover:bg-red-600 border border-slate-500 w-10 h-10 flex items-center justify-center"><i class="fas fa-exclamation text-white"></i></button>
                         <button onclick="toggleEmoteMenu()" class="bg-slate-700 p-2 rounded-full hover:bg-slate-600 border border-slate-500"><i class="fas fa-comment-dots text-white"></i></button>
                         
-                        <div id="emote-menu" class="absolute bottom-12 right-0 bg-slate-800 border border-slate-600 rounded p-2 grid grid-cols-4 gap-2 hidden min-w-[280px] max-h-[300px] overflow-y-auto scrollbar-hide z-[60]">
-                            <button onclick="sendEmote('🤖')" class="text-2xl hover:bg-slate-700 rounded p-1">🤖</button>
-                            <button onclick="sendEmote('💥')" class="text-2xl hover:bg-slate-700 rounded p-1">💥</button>
-                            <button onclick="sendEmote('🤬')" class="text-2xl hover:bg-slate-700 rounded p-1">🤬</button>
-                            <button onclick="sendEmote('👀')" class="text-2xl hover:bg-slate-700 rounded p-1">👀</button>
-                            <button onclick="sendEmote('🗑️')" class="text-2xl hover:bg-slate-700 rounded p-1">🗑️</button>
-                            <button onclick="sendEmote('🔥')" class="text-2xl hover:bg-slate-700 rounded p-1">🔥</button>
-                            <button onclick="sendEmote('💀')" class="text-2xl hover:bg-slate-700 rounded p-1">💀</button>
-                            <button onclick="sendEmote('🤡')" class="text-2xl hover:bg-slate-700 rounded p-1">🤡</button>
-                            <button onclick="sendEmote('🤑')" class="text-2xl hover:bg-slate-700 rounded p-1">🤑</button>
-                            <button onclick="sendEmote('💤')" class="text-2xl hover:bg-slate-700 rounded p-1">💤</button>
-                            <button onclick="sendEmote('👋')" class="text-2xl hover:bg-slate-700 rounded p-1">👋</button>
-                            <button onclick="sendEmote('🫠')" class="text-2xl hover:bg-slate-700 rounded p-1">🫠</button>
-                            <button onclick="sendEmote('😵')" class="text-2xl hover:bg-slate-700 rounded p-1">😵</button>
-                            <button onclick="sendEmote('🕳')" class="text-2xl hover:bg-slate-700 rounded p-1">🕳</button>
-                            <button onclick="sendEmote('🫡')" class="text-2xl hover:bg-slate-700 rounded p-1">🫡</button>
-                            <button onclick="sendEmote('👍')" class="text-2xl hover:bg-slate-700 rounded p-1">👍</button>
-                            <button onclick="sendEmote('🍞')" class="text-2xl hover:bg-slate-700 rounded p-1">🍞</button>
-                            <button onclick="sendEmote('🫴🃏')" class="text-2xl hover:bg-slate-700 rounded p-1">🫴🃏</button>
-                            <button onclick="sendEmote('😬')" class="text-2xl hover:bg-slate-700 rounded p-1">😬</button>
-                            <button onclick="sendEmote('🥲')" class="text-2xl hover:bg-slate-700 rounded p-1">🥲</button>
-                            <button onclick="sendEmote('😀')" class="text-2xl hover:bg-slate-700 rounded p-1">😀</button>
-                            <button onclick="sendEmote('🤣')" class="text-2xl hover:bg-slate-700 rounded p-1">🤣</button>
-                            <button onclick="sendEmote('💩')" class="text-2xl hover:bg-slate-700 rounded p-1">💩</button>
-                            <button onclick="sendEmote('😐')" class="text-2xl hover:bg-slate-700 rounded p-1">😐</button>
-                            <button onclick="sendEmote('😑')" class="text-2xl hover:bg-slate-700 rounded p-1">😑</button>
-                            <button onclick="sendEmote('😶')" class="text-2xl hover:bg-slate-700 rounded p-1">😶</button>
-                            <button onclick="sendEmote('🙃')" class="text-2xl hover:bg-slate-700 rounded p-1">🙃</button>
-                            <button onclick="sendEmote('😎')" class="text-2xl hover:bg-slate-700 rounded p-1">😎</button>
-                            <button onclick="sendEmote('GG')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">GG</button>
-                            <button onclick="sendEmote('YOOO')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">YOOO</button>
-                            <button onclick="sendEmote('*Cooked*')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">*Cooked*</button>
-                            <button onclick="sendEmote('Nice...')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">Nice...</button>
-                            <button onclick="sendEmote('Kick?')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">Kick?</button>
-                            <button onclick="sendEmote('Yes')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">Yes</button>
-                            <button onclick="sendEmote('No')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">No</button>
-                            <button onclick="sendEmote('GG')" class="col-span-4 text-md text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font">GG</button>
+                        <div id="emote-menu" class="absolute bottom-12 right-0 bg-slate-800 border border-slate-600 rounded p-2 grid grid-cols-4 gap-2 hidden min-w-[280px] max-h-[300px] overflow-y-auto scrollbar-hide z-[90]">
+                            <!-- Emotes added via JS -->
+                             <div id="chat-input-row" class="col-span-4 hidden items-center justify-between gap-1 bg-slate-700 p-1 rounded border border-slate-500 mt-1">
+                                <input type="text" id="chat-input-box" maxlength="100" class="w-full bg-transparent text-white text-xs px-2 py-1 pixel-font focus:outline-none placeholder-slate-400" placeholder="TYPE MESSAGE..." onkeypress="handleChatKey(event)">
+                                <button onclick="sendChatMessage()" class="text-green-400 hover:text-white px-2"><i class="fas fa-paper-plane"></i></button>
+                             </div>
                         </div>
-
-                        <div id="report-menu" class="absolute bottom-12 right-12 bg-red-900 border-2 border-red-500 rounded p-4 hidden min-w-[200px] z-[70] flex-col gap-2">
+                        <div id="report-menu" class="absolute bottom-12 right-12 bg-red-900 border-2 border-red-500 rounded p-4 hidden min-w-[200px] z-[90] flex-col gap-2">
                             <h4 class="text-white pixel-font text-xs mb-2 border-b border-red-400 pb-1">REPORT PLAYER</h4>
                             <select id="report-target" class="bg-black text-white p-2 text-xs pixel-font mb-2"></select>
                             <button onclick="submitReport('KICK')" class="bg-red-600 hover:bg-red-500 text-white text-xs py-1 px-2 rounded pixel-font">VOTE KICK (3)</button>
                             <button id="admin-rename-btn" onclick="submitReport('RENAME')" class="hidden bg-orange-600 hover:bg-orange-500 text-white text-xs py-1 px-2 rounded pixel-font">SANITIZE NAME</button>
+                            <button id="admin-mute-btn" onclick="submitReport('MUTE')" class="hidden bg-slate-600 hover:bg-slate-500 text-white text-xs py-1 px-2 rounded pixel-font">MUTE/UNMUTE</button>
                         </div>
                     </div>
                 </div>
-                <div id="player-hand" class="flex justify-center items-end gap-[-4rem] overflow-x-auto px-4 pb-2 min-h-[160px] scrollbar-hide"></div>
+                
+                <!-- SCROLLABLE HAND CONTAINER -->
+                <div class="relative w-full flex items-end justify-center">
+                    <button id="scroll-left" onclick="scrollHand(-1)" class="absolute left-0 bottom-10 z-50 bg-slate-800 text-white p-2 rounded-r-lg opacity-50 hover:opacity-100 hidden border border-slate-600"><i class="fas fa-chevron-left"></i></button>
+                    <div id="player-hand" class="flex justify-start items-end gap-[-4rem] overflow-x-auto px-4 pb-2 min-h-[160px] scrollbar-hide w-full md:justify-center"></div>
+                    <button id="scroll-right" onclick="scrollHand(1)" class="absolute right-0 bottom-10 z-50 bg-slate-800 text-white p-2 rounded-l-lg opacity-50 hover:opacity-100 hidden border border-slate-600"><i class="fas fa-chevron-right"></i></button>
+                </div>
             </div>
 
+            <!-- Future/Debug Modal -->
             <div id="future-modal" class="absolute inset-0 bg-black bg-opacity-90 z-[70] flex-col items-center justify-center hidden">
-                <h2 class="text-2xl text-purple-400 pixel-font mb-4">DEBUG MODE: FUTURE SIGHT</h2>
+                <h2 id="future-title" class="text-2xl text-purple-400 pixel-font mb-4">DATA STREAM</h2>
                 <div id="future-cards" class="flex gap-4"></div>
-                <button onclick="closeFutureModal()" class="mt-8 bg-slate-700 text-white px-6 py-2 rounded pixel-font hover:bg-slate-600">CLOSE_DEBUG</button>
+                <button onclick="closeFutureModal()" class="mt-8 bg-slate-700 text-white px-6 py-2 rounded pixel-font hover:bg-slate-600">CLOSE</button>
             </div>
-
+            
             <div id="game-over-modal" class="absolute inset-0 bg-red-900 bg-opacity-90 z-[70] flex flex-col items-center justify-center hidden">
                 <h2 id="winner-text" class="text-4xl text-white pixel-font mb-4 text-center">SYSTEM CRASH</h2>
                 <div id="xp-gain-msg" class="text-yellow-400 pixel-font mb-4 animate-bounce"></div>
@@ -308,7 +427,12 @@
 
     <!-- MAIN SCRIPT -->
     <script>
-        // === UTILS ===
+        // ==========================================
+        // CONFIGURATION: APPS SCRIPT WEB APP URL
+        // ==========================================
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFWsZRWMCE2TzC3ItKan9Nx_or66-34je-KbKVR33YKWtvO3rnM0v0lBDqJIHDll-e/exec"; // <--- PASTE YOUR DEPLOYMENT URL HERE
+
+        // === GLOBAL UTILS ===
         function showToast(msg) {
             const el = document.createElement('div');
             el.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black border-2 border-green-500 text-green-500 p-4 z-[80] pixel-font text-xl shadow-lg pointer-events-none';
@@ -317,128 +441,206 @@
             setTimeout(() => el.remove(), 2000);
         }
 
+        // Returns styled HTML for names based on their role
+        function getNameHTML(name, status) {
+            const cleanName = name ? name.toString().replace(/</g, "&lt;").replace(/>/g, "&gt;") : "UNKNOWN";
+            if (status === "Verified") {
+                return `<span class="text-blue-300 font-bold" style="text-shadow: 0 0 5px #93c5fd, 0 0 10px #3b82f6;">${cleanName} <i class="fas fa-check-circle text-[8px] text-blue-400"></i></span>`;
+            } else if (status === "Admin") {
+                return `<span class="text-red-500 font-bold" style="text-shadow: 0 0 5px #ef4444, 0 0 10px #dc2626;">${cleanName} <i class="fas fa-shield-alt text-[8px] text-red-500"></i></span>`;
+            } else if (status === "Owner") {
+                return `<span class="name-owner-container"><span class="name-owner-text">${cleanName} <i class="fas fa-crown text-[8px] text-yellow-400"></i></span></span>`;
+            } else {
+                return `<span class="text-green-400">${cleanName}</span>`; 
+            }
+        }
+
         // === PEERJS & STATE ===
         let peer = null;
-        let connections = []; // List of DataConnections (Host Only)
-        let hostConn = null;  // DataConnection to Host (Client Only)
+        let connections = []; 
+        let hostConn = null;  
         let myPeerId = null;
         let isHost = false;
+        let hasAgreedToChat = false;
 
-        let userData = { username: "GUEST", xp: 0, level: 1, isGuest: true };
+        let userData = { 
+            username: "GUEST", 
+            xp: 0, 
+            level: 1, 
+            status: "Player", 
+            isGuest: true,
+            moreInfo: { bits: 0, dailyStreak: 0, lastDaily: "", passXp: 0, passClaimed: [] }
+        };
         
+        // Define cards with 'requiresTarget' flag for dynamic logic
         const CARD_TYPES = {
-            CRASH: { id: 'CRASH', name: 'SYSTEM CRASH', color: 'bg-red-600', icon: 'fa-skull', desc: 'You explode immediately.' },
-            PATCH: { id: 'PATCH', name: 'PATCH', color: 'bg-green-600', icon: 'fa-wrench', desc: 'Defuse a System Crash.' },
-            ATTACK: { id: 'ATTACK', name: 'DDOS', color: 'bg-yellow-600', icon: 'fa-meteor', desc: 'End turn. Next bot takes 2 turns.' },
-            SKIP: { id: 'SKIP', name: 'LAG SPIKE', color: 'bg-blue-600', icon: 'fa-forward', desc: 'End your turn without drawing.' },
-            FUTURE: { id: 'FUTURE', name: 'DEBUG', color: 'bg-purple-600', icon: 'fa-eye', desc: 'See the top 3 cards.' },
-            SHUFFLE: { id: 'SHUFFLE', name: 'REBOOT', color: 'bg-gray-600', icon: 'fa-random', desc: 'Shuffle the deck.' },
-            STEAL: { id: 'STEAL', name: 'PHISH', color: 'bg-orange-600', icon: 'fa-hand-paper', desc: 'Steal a random card from a player.' },
-            FRAG_0: { id: 'FRAG_0', name: 'FRAG 0', color: 'bg-teal-600', icon: 'fa-0', desc: 'Collect matching pair to steal.' },
-            FRAG_1: { id: 'FRAG_1', name: 'FRAG 1', color: 'bg-teal-600', icon: 'fa-1', desc: 'Collect matching pair to steal.' }
+            CRASH: { id: 'CRASH', name: 'SYSTEM CRASH', color: 'bg-red-600', icon: 'fa-skull', desc: 'You explode. No questions asked.', requiresTarget: false },
+            PATCH: { id: 'PATCH', name: 'PATCH', color: 'bg-green-600', icon: 'fa-wrench', desc: 'Defuse a System Crash.', requiresTarget: false },
+            ATTACK: { id: 'ATTACK', name: 'DDOS', color: 'bg-yellow-600', icon: 'fa-meteor', desc: 'End turn. Next bot takes 2 turns.', requiresTarget: false },
+            SKIP: { id: 'SKIP', name: 'LAG SPIKE', color: 'bg-blue-600', icon: 'fa-forward', desc: 'End your turn without drawing.', requiresTarget: false },
+            FUTURE: { id: 'FUTURE', name: 'DEBUG', color: 'bg-purple-600', icon: 'fa-eye', desc: 'See the top 3 cards.', requiresTarget: false },
+            SHUFFLE: { id: 'SHUFFLE', name: 'REBOOT', color: 'bg-gray-600', icon: 'fa-random', desc: 'Shuffle the deck.', requiresTarget: false },
+            STEAL: { id: 'STEAL', name: 'PHISH', color: 'bg-orange-600', icon: 'fa-hand-paper', desc: 'Steal a random card from a player.', requiresTarget: false },
+            FRAG_0: { id: 'FRAG_0', name: 'FRAG 0', color: 'bg-teal-600', icon: 'fa-0', desc: 'Collect matching pair to steal.', requiresTarget: false },
+            FRAG_1: { id: 'FRAG_1', name: 'FRAG 1', color: 'bg-teal-600', icon: 'fa-1', desc: 'Collect matching pair to steal.', requiresTarget: false },
+            DENIED: { id: 'DENIED', name: 'DENIED', color: 'bg-red-900', icon: 'fa-ban', desc: 'Stop an action card immediately.', requiresTarget: false },
+            HACK: { id: 'HACK', name: 'HACK', color: 'bg-red-800', icon: 'fa-user-secret', desc: 'Look at a hand and steal a specific card.', requiresTarget: true },
+            SUDO: { id: 'SUDO', name: 'SUDO', color: 'bg-yellow-700', icon: 'fa-terminal', desc: 'Force a player to draw 2 cards.', requiresTarget: true },
+            BACKUP: { id: 'BACKUP', name: 'BACKUP', color: 'bg-cyan-700', icon: 'fa-hdd', desc: 'Draw 1 card from the bottom of the deck.', requiresTarget: false },
+            CACHE: { id: 'CACHE', name: 'CACHE', color: 'bg-green-700', icon: 'fa-box-open', desc: 'Draw 2 cards.', requiresTarget: false }
         };
 
         let localState = {
             players: [], deck: [], discardPile: [], turnIndex: 0, status: 'LOBBY', 
             attacksBuffered: 0, mode: 'single', maxPlayers: 4, isPublic: false, kickVotes: {}, cardsPlayedThisGame: 0,
-            activeFlashCard: null 
+            activeFlashCard: null,
+            interruptWindow: null,
+            chatEnabled: false 
         };
-
+        
         // === INITIALIZATION ===
         window.onload = () => {
+            initEmotes();
+            // Pre-fill username from local cache if it exists, but don't auto-login bypassing security
             const cachedUser = localStorage.getItem('system_crash_username');
             if (cachedUser) {
-                const storedData = localStorage.getItem('system_crash_data_' + cachedUser);
-                if (storedData) userData = JSON.parse(storedData);
-                else userData.username = cachedUser;
-                
-                userData.isGuest = false;
-                updateMenuUI();
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('main-menu').classList.remove('hidden');
+                document.getElementById('login-user').value = cachedUser;
             }
         };
 
-        // === AUTH HANDLERS ===
-        window.showLogin = () => {
-            document.getElementById('auth-buttons').classList.add('hidden');
-            document.getElementById('login-form').classList.replace('hidden', 'flex');
-        }
-        window.showSignup = () => {
-            document.getElementById('auth-buttons').classList.add('hidden');
-            document.getElementById('signup-form').classList.replace('hidden', 'flex');
-        }
-        window.showAuthButtons = () => {
-            document.getElementById('login-form').classList.replace('flex', 'hidden');
-            document.getElementById('signup-form').classList.replace('flex', 'hidden');
-            document.getElementById('auth-buttons').classList.remove('hidden');
+        function initEmotes() {
+            const emojis = ['🤖','💥','🤬','👀','🗑️','🔥','💀','🤡','🤑','💤','👋','🫠','😵','🕳','🫡','👍','🍞','🫴🃏','😬','🥲','😀','🤣','💩','😐','😑','😶','🙃','😎'];
+            const textEmotes = ['GG', 'YOOO', '*Cooked*', 'Nice...', 'Kick?', 'Yes', 'No'];
+            
+            const container = document.getElementById('emote-menu');
+            let html = '';
+            emojis.forEach(e => html += `<button onclick="sendEmote('${e}')" class="text-2xl hover:bg-slate-700 rounded p-1">${e}</button>`);
+            textEmotes.forEach(t => { html += `<button onclick="sendEmote('${t}')" class="col-span-2 text-[10px] md:text-xs text-yellow-400 hover:bg-slate-700 py-1 font-bold pixel-font border border-slate-600 rounded">${t}</button>`; });
+            // The input row is static HTML, so we PREPEND our buttons to it
+            const inputRow = document.getElementById('chat-input-row');
+            container.innerHTML = html + container.innerHTML;
         }
 
-        window.performLogin = () => {
-            const user = document.getElementById('login-user').value.trim().toUpperCase();
+        // --- AUTH HANDLERS ---
+        window.showLogin = () => { document.getElementById('auth-buttons').classList.add('hidden'); document.getElementById('login-form').classList.replace('hidden', 'flex'); }
+        window.showSignup = () => { document.getElementById('auth-buttons').classList.add('hidden'); document.getElementById('signup-form').classList.replace('hidden', 'flex'); }
+        window.showAuthButtons = () => { document.getElementById('login-form').classList.replace('flex', 'hidden'); document.getElementById('signup-form').classList.replace('flex', 'hidden'); document.getElementById('auth-buttons').classList.remove('hidden'); }
+        
+        window.performLogin = async () => { 
+            const user = document.getElementById('login-user').value.trim().toUpperCase(); 
             const pass = document.getElementById('login-pass').value.trim();
             if(!user || !pass) return alert("Missing Creds");
             
-            const stored = localStorage.getItem('system_crash_account_' + user);
-            if (stored) {
-                const acc = JSON.parse(stored);
-                if (acc.password === pass) {
-                    const data = localStorage.getItem('system_crash_data_' + user);
-                    if(data) userData = JSON.parse(data);
-                    else userData = { username: user, xp: 0, level: 1, isGuest: false };
+            if (APPS_SCRIPT_URL === "YOUR_WEB_APP_URL_HERE") {
+                alert("Developer: Please set your Google Apps Script URL in the code!");
+                return;
+            }
+
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('loading-msg').innerText = "AUTHENTICATING...";
+            document.getElementById('loading-msg').classList.remove('hidden');
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', username: user, password: pass })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    let info = { bits: 0, dailyStreak: 0, lastDaily: "", passXp: 0, passClaimed: [] };
+                    if (result.data.moreInfo) {
+                        try { info = JSON.parse(result.data.moreInfo); } catch(e) {}
+                    }
+                    userData = { username: user, xp: result.data.xp, level: result.data.level, status: result.data.status, moreInfo: info, isGuest: false };
                     
-                    localStorage.setItem('system_crash_username', user);
+                    localStorage.setItem('system_crash_username', user); // Remember username for next time
                     updateMenuUI();
                     document.getElementById('auth-screen').classList.add('hidden');
                     document.getElementById('main-menu').classList.remove('hidden');
                 } else {
-                    alert("Invalid Password");
+                    alert("Login Failed: " + result.message);
+                    document.getElementById('login-form').classList.remove('hidden');
                 }
-            } else {
-                alert("User not found");
+            } catch (e) {
+                console.error(e);
+                alert("Network error. Please check your connection or Apps Script URL.");
+                document.getElementById('login-form').classList.remove('hidden');
             }
+            document.getElementById('loading-msg').classList.add('hidden');
         }
-
-        window.performSignup = () => {
+        
+        window.performSignup = async () => { 
             const user = document.getElementById('signup-user').value.trim().toUpperCase();
             const pass = document.getElementById('signup-pass').value.trim();
             if(!user || !pass) return alert("Missing Creds");
-            if (localStorage.getItem('system_crash_account_' + user)) return alert("User exists");
             
-            const acc = { username: user, password: pass };
-            localStorage.setItem('system_crash_account_' + user, JSON.stringify(acc));
-            const data = { username: user, xp: 0, level: 1, isGuest: false };
-            localStorage.setItem('system_crash_data_' + user, JSON.stringify(data));
-            
-            alert("Account Created! Login now.");
-            showAuthButtons();
+            if (APPS_SCRIPT_URL === "YOUR_WEB_APP_URL_HERE") {
+                alert("Developer: Please set your Google Apps Script URL in the code!");
+                return;
+            }
+
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('loading-msg').innerText = "CREATING ACCOUNT...";
+            document.getElementById('loading-msg').classList.remove('hidden');
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'signup', username: user, password: pass })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert("Account Created! You can now log in.");
+                    document.getElementById('login-user').value = user;
+                    showAuthButtons();
+                } else {
+                    alert("Signup Failed: " + result.message);
+                    document.getElementById('signup-form').classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Network error. Please check your connection or Apps Script URL.");
+                document.getElementById('signup-form').classList.remove('hidden');
+            }
+            document.getElementById('loading-msg').classList.add('hidden');
+        }
+        
+        window.guestLogin = () => { userData = { username: "GUEST_" + Math.floor(Math.random()*999), xp: 0, level: 1, status: "Player", isGuest: true, moreInfo: { bits: 0, dailyStreak: 0, lastDaily: "", passXp: 0, passClaimed: [] } }; updateMenuUI(); document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); }
+        window.logout = () => { localStorage.removeItem('system_crash_username'); location.reload(); }
+        
+        function updateMenuUI() { 
+            document.getElementById('menu-username').innerHTML = getNameHTML(userData.username, userData.status); 
+            document.getElementById('menu-level').innerText = userData.level; 
+            const nextXp = Math.floor(100 * Math.pow(1.2, userData.level - 1)); 
+            document.getElementById('menu-xp').innerText = Math.floor(userData.xp); 
+            document.getElementById('menu-xp-next').innerText = nextXp; 
+            const pct = Math.min(100, (userData.xp / nextXp) * 100); 
+            document.getElementById('xp-bar').style.width = `${pct}%`; 
+            document.getElementById('menu-bits').innerText = userData.moreInfo.bits || 0;
         }
 
-        window.guestLogin = () => {
-            userData = { username: "GUEST_" + Math.floor(Math.random()*999), xp: 0, level: 1, isGuest: true };
-            updateMenuUI();
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('main-menu').classList.remove('hidden');
-        }
-
-        window.logout = () => {
-            localStorage.removeItem('system_crash_username');
-            location.reload();
-        }
-
-        function updateMenuUI() {
-            document.getElementById('menu-username').innerText = userData.username;
-            document.getElementById('menu-level').innerText = userData.level;
-            const nextXp = Math.floor(100 * Math.pow(1.2, userData.level - 1));
-            document.getElementById('menu-xp').innerText = Math.floor(userData.xp);
-            document.getElementById('menu-xp-next').innerText = nextXp;
-            const pct = Math.min(100, (userData.xp / nextXp) * 100);
-            document.getElementById('xp-bar').style.width = `${pct}%`;
+        function syncCloud() {
+            if (userData.isGuest || APPS_SCRIPT_URL === "YOUR_WEB_APP_URL_HERE") return;
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    action: 'update', 
+                    username: userData.username, 
+                    xp: userData.xp, 
+                    lvl: userData.level,
+                    moreInfo: userData.moreInfo
+                })
+            }).catch(e => console.log("Failed to sync data to cloud."));
         }
 
         function addXp(amount) {
             if (userData.isGuest) return;
             userData.xp += amount;
+            if(!userData.moreInfo.passXp) userData.moreInfo.passXp = 0;
+            userData.moreInfo.passXp += amount; // Earn Pass XP simultaneously
+            
             let nextXp = Math.floor(100 * Math.pow(1.2, userData.level - 1));
             while (userData.xp >= nextXp) {
                 userData.xp -= nextXp;
@@ -446,166 +648,201 @@
                 nextXp = Math.floor(100 * Math.pow(1.2, userData.level - 1));
                 showToast("LEVEL UP!");
             }
-            localStorage.setItem('system_crash_data_' + userData.username, JSON.stringify(userData));
+            updateMenuUI();
+
+            // Sync to Database
+            if (APPS_SCRIPT_URL !== "YOUR_WEB_APP_URL_HERE") {
+                fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'update', username: userData.username, xp: userData.xp, lvl: userData.level })
+                }).catch(e => console.log("Failed to sync XP to cloud."));
+            }
+        }
+
+        // --- HUB FUNCTIONS (LEADERBOARD, DAILY, PASS) ---
+
+        window.closeHubModals = () => {
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+            document.getElementById('daily-modal').classList.add('hidden');
+            document.getElementById('pass-modal').classList.add('hidden');
+        }
+
+        window.showLeaderboard = async () => {
+            document.getElementById('leaderboard-modal').classList.remove('hidden');
+            document.getElementById('leaderboard-list').innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-500 animate-pulse">FETCHING DATABASE...</td></tr>`;
+            
+            if (APPS_SCRIPT_URL === "YOUR_WEB_APP_URL_HERE") {
+                document.getElementById('leaderboard-list').innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">NO DATABASE CONNECTED</td></tr>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'leaderboard' }) });
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    let html = '';
+                    result.data.forEach((p, i) => {
+                        const rankColor = i === 0 ? 'text-yellow-400' : (i === 1 ? 'text-slate-300' : (i === 2 ? 'text-amber-600' : 'text-white'));
+                        html += `<tr class="border-b border-slate-700 hover:bg-slate-700 transition">
+                            <td class="py-3 ${rankColor} font-bold">${i + 1}</td>
+                            <td class="py-3">${getNameHTML(p.name, p.status)}</td>
+                            <td class="py-3 text-right text-cyan-400">${p.lvl}</td>
+                            <td class="py-3 text-right text-yellow-500">${Math.floor(p.xp)}</td>
+                        </tr>`;
+                    });
+                    document.getElementById('leaderboard-list').innerHTML = html;
+                }
+            } catch (e) {
+                document.getElementById('leaderboard-list').innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">FAILED TO LOAD</td></tr>`;
+            }
+        }
+
+        window.showDaily = () => {
+            document.getElementById('daily-modal').classList.remove('hidden');
+            renderDailyUI();
+        }
+
+        function renderDailyUI() {
+            const today = new Date().toDateString();
+            const streak = userData.moreInfo.dailyStreak || 0;
+            const alreadyClaimed = userData.moreInfo.lastDaily === today;
+            
+            document.getElementById('daily-streak-text').innerText = streak;
+            const btn = document.getElementById('claim-daily-btn');
+            
+            if (alreadyClaimed) {
+                btn.innerText = "CLAIMED";
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.disabled = true;
+            } else {
+                btn.innerText = "CLAIM REWARD";
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.disabled = false;
+            }
+
+            const rewards = [50, 100, 200, 500]; // Bits rewards
+            const container = document.getElementById('daily-cards-container');
+            let html = '';
+            
+            for(let i=0; i<4; i++) {
+                const isActive = (!alreadyClaimed && i === streak);
+                const isPast = i < streak || (alreadyClaimed && streak===0 && i<3) || (alreadyClaimed && i <= streak);
+                
+                let border = "border-slate-600";
+                let iconColor = "text-slate-500";
+                if (isActive) { border = "border-cyan-400 animate-pulse"; iconColor = "text-cyan-400"; }
+                else if (isPast && !isActive) { border = "border-green-500 opacity-50"; iconColor = "text-green-500"; }
+
+                html += `
+                    <div class="w-16 h-24 md:w-24 md:h-32 bg-slate-800 rounded border-2 ${border} flex flex-col items-center justify-center relative">
+                        <div class="absolute top-1 text-[8px] text-slate-400 pixel-font">DAY ${i+1}</div>
+                        <i class="fas fa-coins text-2xl md:text-4xl ${iconColor} mb-2"></i>
+                        <div class="text-[10px] md:text-xs text-yellow-400 pixel-font">${rewards[i]}</div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        window.claimDaily = () => {
+            if (userData.isGuest) return showToast("GUESTS CANNOT CLAIM");
+            
+            const today = new Date().toDateString();
+            if (userData.moreInfo.lastDaily === today) return;
+
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (userData.moreInfo.lastDaily === yesterday.toDateString()) {
+                userData.moreInfo.dailyStreak = (userData.moreInfo.dailyStreak + 1) % 4;
+            } else {
+                userData.moreInfo.dailyStreak = 0; 
+            }
+
+            const rewards = [50, 100, 200, 500];
+            const earned = rewards[userData.moreInfo.dailyStreak];
+            
+            if(!userData.moreInfo.bits) userData.moreInfo.bits = 0;
+            userData.moreInfo.bits += earned;
+            userData.moreInfo.lastDaily = today;
+            
+            if (userData.moreInfo.dailyStreak === 3) userData.moreInfo.dailyStreak = -1; // Reset mechanism
+
+            showToast(`CLAIMED ${earned} BITS!`);
+            syncCloud();
+            renderDailyUI();
             updateMenuUI();
         }
 
-        // === GAME LOGIC DEFINITIONS ===
-        
-        async function handleDraw(playerIdx) {
-            let newState = JSON.parse(JSON.stringify(localState));
-            let player = newState.players[playerIdx];
+        window.showPass = () => {
+            document.getElementById('pass-modal').classList.remove('hidden');
             
-            if (newState.deck.length === 0) {
-                if (newState.discardPile.length > 0) {
-                    newState.deck = shuffle([...newState.discardPile]);
-                    newState.discardPile = [];
-                    showToast("DECK RESHUFFLED");
-                } else { return; }
+            const xp = userData.moreInfo.passXp || 0;
+            const level = Math.floor(xp / 500) + 1;
+            const currentXp = xp % 500;
+            
+            document.getElementById('pass-level-text').innerText = level;
+            document.getElementById('pass-xp-text').innerText = currentXp;
+            document.getElementById('pass-xp-bar').style.width = `${(currentXp / 500) * 100}%`;
+
+            const container = document.getElementById('pass-tiers-container');
+            let html = '';
+            if (!userData.moreInfo.passClaimed) userData.moreInfo.passClaimed = [];
+
+            // Show current level and next 4 levels
+            for(let i = level; i < level + 5; i++) {
+                const isClaimed = userData.moreInfo.passClaimed.includes(i);
+                const canClaim = i < level;
+                const isCurrent = i === level;
+
+                let btnHtml = '';
+                if (isClaimed) btnHtml = `<button class="bg-slate-700 text-slate-500 py-1 px-3 rounded pixel-font text-[10px]" disabled>CLAIMED</button>`;
+                else if (canClaim) btnHtml = `<button onclick="claimPass(${i})" class="bg-purple-600 hover:bg-purple-500 text-white py-1 px-3 rounded shadow-[2px_2px_0px_0px_#000] pixel-font text-[10px] animate-pulse">CLAIM</button>`;
+                else btnHtml = `<button class="bg-slate-700 text-slate-500 py-1 px-3 rounded pixel-font text-[10px]" disabled>LOCKED</button>`;
+
+                html += `
+                    <div class="flex items-center justify-between bg-slate-900 p-3 rounded border ${isCurrent ? 'border-purple-500' : 'border-slate-700'}">
+                        <div class="flex items-center gap-4">
+                            <div class="text-purple-400 pixel-font text-xs w-12">LVL ${i}</div>
+                            <div class="flex items-center gap-2 text-yellow-400 pixel-font text-xs"><i class="fas fa-coins"></i> 100 BITS</div>
+                        </div>
+                        ${btnHtml}
+                    </div>
+                `;
             }
-
-            const card = newState.deck.shift();
-            if (!card) return;
-
-            // === BOMB REVEAL LOGIC ===
-            if (card.id === 'CRASH') {
-                // 1. Set global state to show reveal
-                newState.activeFlashCard = { id: 'CRASH', drawer: player.name };
-                
-                // Commit to update all clients with flash
-                if (localState.mode === 'multi' && isHost) {
-                    localState = newState;
-                    broadcastState(); // Sends flash state
-                } else if (localState.mode === 'single') {
-                    await updateState(newState);
-                }
-
-                // 2. Wait 3 seconds
-                setTimeout(async () => {
-                    let postRevealState = JSON.parse(JSON.stringify(localState));
-                    let p = postRevealState.players[playerIdx];
-                    postRevealState.activeFlashCard = null; // Clear reveal
-
-                    const defuseIdx = p.hand.findIndex(c => c.id === 'PATCH');
-                    if (defuseIdx > -1) {
-                        p.hand.splice(defuseIdx, 1);
-                        postRevealState.discardPile.push(CARD_TYPES.PATCH);
-                        const randomSpot = Math.floor(Math.random() * (postRevealState.deck.length + 1));
-                        postRevealState.deck.splice(randomSpot, 0, CARD_TYPES.CRASH);
-                        showToast(`${p.name} DEFUSED!`); 
-                        p.turnsToTake -= 1;
-                    } else {
-                        p.isDead = true;
-                        p.hand = [];
-                        const survivors = postRevealState.players.filter(x => !x.isDead);
-                        if (survivors.length === 1) {
-                            postRevealState.status = 'GAME_OVER';
-                            postRevealState.winner = survivors[0].name;
-                            setTimeout(() => endGame(survivors[0].name), 500);
-                        }
-                        p.turnsToTake = 0;
-                    }
-
-                    if (p.turnsToTake <= 0 && !p.isDead) postRevealState = advanceTurn(postRevealState);
-                    if (p.isDead && postRevealState.status !== 'GAME_OVER') postRevealState = advanceTurn(postRevealState);
-
-                    // Commit changes
-                    if (localState.mode === 'multi' && isHost) {
-                        localState = postRevealState;
-                        broadcastState();
-                    } else if (localState.mode === 'single') {
-                        await updateState(postRevealState);
-                    }
-
-                }, 3000);
-                
-                return; 
-            } else {
-                player.hand.push(card);
-                player.turnsToTake -= 1;
-            }
-
-            if (player.turnsToTake <= 0 && !player.isDead) newState = advanceTurn(newState);
-            if (player.isDead && newState.status !== 'GAME_OVER') newState = advanceTurn(newState);
-
-            await updateState(newState);
+            container.innerHTML = html;
         }
 
-        function checkBotTurn() {
-            if (localState.status !== 'PLAYING') return;
-            const player = localState.players[localState.turnIndex];
-            if (!player || !player.isBot || player.isDead) return;
-            if (localState.activeFlashCard) return; 
+        window.claimPass = (tierLevel) => {
+            if (userData.isGuest) return;
+            if (!userData.moreInfo.passClaimed) userData.moreInfo.passClaimed = [];
+            if (userData.moreInfo.passClaimed.includes(tierLevel)) return;
 
-            if (localState.mode === 'multi') {
-                 if (!isHost) return;
-            }
-            setTimeout(() => { botAction(player); }, 1500);
+            userData.moreInfo.passClaimed.push(tierLevel);
+            if(!userData.moreInfo.bits) userData.moreInfo.bits = 0;
+            userData.moreInfo.bits += 100;
+            
+            showToast("CLAIMED 100 BITS!");
+            syncCloud();
+            window.showPass(); 
+            updateMenuUI();
         }
 
-        async function botAction(player) {
-            // Re-validate turn and player to prevent race condition crashes
-            if (localState.players[localState.turnIndex].id !== player.id) return;
-            if (localState.activeFlashCard) return;
+        // --- GAME LOGIC ---
 
-            if (localState.deck.length === 0 && localState.discardPile.length === 0 && !player.hand.some(c => c.id !== 'CRASH')) return;
-            let actionCardIdx = -1;
-            const attacks = player.hand.map((c, i) => c.id === 'ATTACK' ? i : -1).filter(i => i !== -1);
-            if (attacks.length > 0 && Math.random() > 0.6) actionCardIdx = attacks[0];
-            if (actionCardIdx === -1) {
-                 const skips = player.hand.map((c, i) => c.id === 'SKIP' ? i : -1).filter(i => i !== -1);
-                 if (skips.length > 0 && Math.random() > 0.5) actionCardIdx = skips[0];
-            }
-            if (actionCardIdx !== -1) {
-                window.playCard(actionCardIdx); 
-            } else {
-                handleDraw(localState.turnIndex);
-            }
-        }
-
-        function advanceTurn(state, isAttack = false) {
-            if (typeof state === 'boolean') {
-                 isAttack = state;
-                 state = JSON.parse(JSON.stringify(localState));
-            }
-            if (!state) {
-                 state = JSON.parse(JSON.stringify(localState));
-            }
-             
-            let nextIndex = (state.turnIndex + 1) % state.players.length;
-            while(state.players[nextIndex].isDead) {
-                nextIndex = (nextIndex + 1) % state.players.length;
-            }
-            state.turnIndex = nextIndex;
-            if (isAttack) {
-                state.players[nextIndex].turnsToTake = 2;
-            } else {
-                state.players[nextIndex].turnsToTake = 1;
-            }
-            return state;
-        }
-
-
-        // --- DECK & SETUP ---
         function setupDeckForDeal(playerCount) {
             let deck = [];
-            const multipliers = Math.max(1, Math.ceil(playerCount / 4));
-            for(let i=0; i < 4 * multipliers; i++) {
-                deck.push(CARD_TYPES.ATTACK, CARD_TYPES.SKIP, CARD_TYPES.FUTURE, CARD_TYPES.SHUFFLE, CARD_TYPES.STEAL, CARD_TYPES.FRAG_0, CARD_TYPES.FRAG_1); 
-            }
-            for(let i=0; i < 3 * multipliers; i++) {
-                deck.push(CARD_TYPES.ATTACK, CARD_TYPES.SKIP, CARD_TYPES.FRAG_0, CARD_TYPES.FRAG_1);
-            }
+            const multipliers = Math.max(1, Math.ceil((playerCount * 4 + 75) / 60));
+            for(let i=0; i < 4 * multipliers; i++) deck.push(CARD_TYPES.ATTACK, CARD_TYPES.SKIP, CARD_TYPES.FUTURE, CARD_TYPES.SHUFFLE, CARD_TYPES.STEAL, CARD_TYPES.FRAG_0, CARD_TYPES.FRAG_1, CARD_TYPES.HACK, CARD_TYPES.DENIED, CARD_TYPES.SUDO, CARD_TYPES.CACHE, CARD_TYPES.BACKUP); 
+            for(let i=0; i < 3 * multipliers; i++) deck.push(CARD_TYPES.ATTACK, CARD_TYPES.SKIP, CARD_TYPES.FRAG_0, CARD_TYPES.FRAG_1);
             localState.deck = shuffle(deck);
         }
 
         function dealHands() {
             localState.players.forEach(p => {
-                p.hand = [];
-                p.hand.push(CARD_TYPES.PATCH);
-                for(let i=0; i<4; i++) {
-                    if (localState.deck.length > 0) p.hand.push(localState.deck.pop());
-                }
+                p.hand = [CARD_TYPES.PATCH];
+                for(let i=0; i<4; i++) { if (localState.deck.length > 0) p.hand.push(localState.deck.pop()); }
             });
         }
 
@@ -619,7 +856,6 @@
 
         function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
 
-        // --- MAIN FUNCTIONS ---
         window.startGame = (mode) => {
             document.getElementById('main-menu').classList.add('hidden');
             if (mode === 'single') startSinglePlayer();
@@ -635,27 +871,24 @@
             isHost = true;
             myPeerId = 'player';
             localState.players = [
-                { id: 'player', name: userData.username, hand: [], isBot: false, isDead: false, turnsToTake: 1, emote: null },
-                { id: 'bot1', name: 'BOT_ALPHA', hand: [], isBot: true, isDead: false, turnsToTake: 1, emote: null },
-                { id: 'bot2', name: 'BOT_BETA', hand: [], isBot: true, isDead: false, turnsToTake: 1, emote: null },
-                { id: 'bot3', name: 'BOT_GAMMA', hand: [], isBot: true, isDead: false, turnsToTake: 1, emote: null }
+                { id: 'player', name: userData.username, hand: [], isBot: false, isDead: false, turnsToTake: 1, emote: null, muted: false, status: userData.status },
+                { id: 'bot1', name: 'BOT_ALPHA', hand: [], isBot: true, isDead: false, turnsToTake: 1, emote: null, muted: false, status: 'Player' },
+                { id: 'bot2', name: 'BOT_BETA', hand: [], isBot: true, isDead: false, turnsToTake: 1, emote: null, muted: false, status: 'Player' },
+                { id: 'bot3', name: 'BOT_GAMMA', hand: [], isBot: true, isDead: false, turnsToTake: 1, emote: null, muted: false, status: 'Player' }
             ];
             localState.cardsPlayedThisGame = 0;
-            
+            localState.chatEnabled = false;
             setupDeckForDeal(4);
             dealHands();
             insertBombs(4);
-
             localState.status = 'PLAYING';
             localState.turnIndex = Math.floor(Math.random() * 4);
-            
             document.getElementById('game-board').classList.remove('hidden');
             renderGame();
             checkBotTurn();
         }
 
-        // --- NETWORKING (PEERJS) ---
-
+        // --- NETWORKING ---
         window.createRoom = (isPublic = false) => {
             const code = Math.random().toString(36).substring(2, 6).toUpperCase();
             const peerId = 'syscrash_' + code;
@@ -677,96 +910,90 @@
         function initPeer(id, host, targetId, isPublic = false) {
             isHost = host;
             peer = new Peer(id); 
-            
             peer.on('open', (myId) => {
                 myPeerId = myId;
                 if (isHost) {
                     const code = myId.split('_')[1];
                     document.getElementById('display-room-code').innerText = code;
                     enterWaitingRoom();
-                    
                     localState.mode = 'multi';
-                    localState.players = [{
-                        id: myId, name: userData.username, hand: [], isBot: false, isDead: false, turnsToTake: 1, emote: null
-                    }];
+                    localState.players = [{ id: myId, name: userData.username, hand: [], isBot: false, isDead: false, turnsToTake: 1, emote: null, muted: false, status: userData.status }];
                     localState.status = 'LOBBY';
                     localState.maxPlayers = parseInt(document.getElementById('max-players-input').value) || 4;
                     localState.isPublic = isPublic;
+                    localState.chatEnabled = document.getElementById('chat-enabled-check').checked;
+                    // Show host options
+                    document.getElementById('host-options').classList.remove('hidden');
                     renderLobby();
-
                 } else {
                     hostConn = peer.connect(targetId);
-                    
                     hostConn.on('open', () => {
                         enterWaitingRoom();
                         document.getElementById('display-room-code').innerText = targetId.split('_')[1];
-                        hostConn.send({ type: 'JOIN', name: userData.username });
+                        hostConn.send({ type: 'JOIN', name: userData.username, status: userData.status });
                     });
-
-                    hostConn.on('data', (data) => {
-                        handleClientData(data);
-                    });
-                    
-                    hostConn.on('close', () => {
-                        alert("Disconnected from Host");
-                        backToMain();
-                    });
+                    hostConn.on('data', (data) => handleClientData(data));
+                    hostConn.on('close', () => { alert("Disconnected from Host"); backToMain(); });
                 }
             });
-
             peer.on('connection', (conn) => {
                 if (isHost) {
                     connections.push(conn);
-                    conn.on('data', (data) => {
-                        handleHostData(data, conn);
-                    });
-                    conn.on('close', () => {
-                        connections = connections.filter(c => c !== conn);
-                    });
+                    conn.on('data', (data) => handleHostData(data, conn));
+                    conn.on('close', () => connections = connections.filter(c => c !== conn));
                 }
             });
-            
-            peer.on('error', (err) => {
-                console.error(err);
-                alert("Connection Error. Try another code or check network.");
-            });
+            peer.on('error', (err) => { console.error(err); alert("Connection Error. Check network."); });
         }
 
         function handleHostData(data, conn) {
             if (data.type === 'JOIN') {
                 if (localState.status !== 'LOBBY') return;
-                if (localState.players.length >= localState.maxPlayers) return; 
-                
-                const newP = {
-                    id: conn.peer,
-                    name: data.name,
-                    hand: [], isBot: false, isDead: false, turnsToTake: 1, emote: null
-                };
+                const newP = { id: conn.peer, name: data.name, hand: [], isBot: false, isDead: false, turnsToTake: 1, emote: null, muted: false, status: data.status || 'Player' };
                 localState.players.push(newP);
                 broadcastState();
             } 
             else if (data.type === 'PLAY_CARD') {
                 const pIdx = localState.players.findIndex(p => p.id === conn.peer);
-                if (pIdx === localState.turnIndex) {
-                    window.playCard(data.cardIndex); 
-                }
+                if (pIdx === localState.turnIndex) window.playCard(data.cardIndex); 
+            }
+            else if (data.type === 'PLAY_TARGETED') {
+                 const pIdx = localState.players.findIndex(p => p.id === conn.peer);
+                 if (pIdx === localState.turnIndex) {
+                     const card = localState.players[pIdx].hand[data.cardIndex];
+                     if(card.requiresTarget) triggerInterrupt(card, pIdx, data.cardIndex, data.targetId);
+                     else executeCardEffect(card, pIdx, data.cardIndex, data.targetId);
+                 }
             }
             else if (data.type === 'DRAW_CARD') {
                 const pIdx = localState.players.findIndex(p => p.id === conn.peer);
-                if (pIdx === localState.turnIndex) {
-                    window.playerDrawCard(true); // Allow network request
-                }
+                if (pIdx === localState.turnIndex) window.playerDrawCard(true); 
             }
             else if (data.type === 'EMOTE') {
                 const pIdx = localState.players.findIndex(p => p.id === conn.peer);
                 if (pIdx > -1) {
+                    // Check Mute
+                    if (localState.players[pIdx].muted) return; 
                     localState.players[pIdx].emote = data.emoji;
                     broadcastState();
-                    setTimeout(() => {
-                        localState.players[pIdx].emote = null;
-                        broadcastState();
-                    }, 2000);
+                    setTimeout(() => { localState.players[pIdx].emote = null; broadcastState(); }, 2000);
                 }
+            }
+            else if (data.type === 'PLAY_DENIED') handleDenied(conn.peer);
+            else if (data.type === 'HACK_COMPLETE') executeHackSteal(data.targetId, data.cardIdx);
+            else if (data.type === 'CHAT') {
+                 // Broadcast chat if enabled and not muted
+                 if (localState.chatEnabled) {
+                     const pIdx = localState.players.findIndex(p => p.id === conn.peer);
+                     if (pIdx > -1 && !localState.players[pIdx].muted) {
+                         localState.players[pIdx].emote = data.msg; // Reuse emote bubble
+                         broadcastState();
+                         setTimeout(() => { localState.players[pIdx].emote = null; broadcastState(); }, 4000);
+                     }
+                 }
+            }
+            else if (data.type === 'SELECT_TARGET') {
+                 // Should not happen on Host
             }
         }
 
@@ -774,39 +1001,33 @@
             if (data.type === 'STATE_UPDATE') {
                 localState = data.state;
                 if (localState.status === 'LOBBY') {
-                    // Force lobby view
                     document.getElementById('lobby-menu').classList.remove('hidden');
                     document.getElementById('game-board').classList.add('hidden');
                     renderLobby();
-                }
-                else if (localState.status === 'PLAYING' || localState.status === 'GAME_OVER') {
+                } else if (localState.status === 'PLAYING' || localState.status === 'GAME_OVER') {
                     document.getElementById('lobby-menu').classList.add('hidden');
                     document.getElementById('game-board').classList.remove('hidden');
                     renderGame();
                 }
-            } else if (data.type === 'FUTURE_SIGHT') {
-                showFutureSight(data.deck);
-            }
+            } else if (data.type === 'FUTURE_SIGHT') showFutureSight(data.deck);
+            else if (data.type === 'HACK_DATA') showHackModal(data.victimId, { players: [{id: data.victimId, hand: data.hand}] });
+            else if (data.type === 'SELECT_TARGET') showTargetSelection(data.cardIndex, 'GENERIC');
         }
 
         function broadcastState() {
             const payload = { type: 'STATE_UPDATE', state: localState };
             connections.forEach(c => c.send(payload));
-            
-            // Host UI Update Logic
             if (localState.status === 'LOBBY') {
                  document.getElementById('lobby-menu').classList.remove('hidden');
                  document.getElementById('game-board').classList.add('hidden');
                  renderLobby();
-            }
-            else {
+            } else {
                  document.getElementById('lobby-menu').classList.add('hidden');
                  document.getElementById('game-board').classList.remove('hidden');
                  renderGame();
             }
         }
 
-        // FIXED: Re-added startMultiplayerGame function that was missing/undefined
         window.startMultiplayerGame = () => {
             if(!isHost) return;
             setupDeckForDeal(localState.players.length);
@@ -814,59 +1035,72 @@
             insertBombs(localState.players.length);
             localState.status = 'PLAYING';
             localState.turnIndex = 0;
-            broadcastState(); // Use broadcast to ensure clients switch screens
+            localState.chatEnabled = document.getElementById('chat-enabled-check').checked;
+            broadcastState(); 
         }
 
+        // --- ACTIONS ---
         window.playCard = async (cardIndex) => {
-            if (!isHost && localState.mode === 'multi') {
-                hostConn.send({ type: 'PLAY_CARD', cardIndex: cardIndex });
-                return;
-            }
-
+            if (!isHost && localState.mode === 'multi') { hostConn.send({ type: 'PLAY_CARD', cardIndex: cardIndex }); return; }
             const pIdx = localState.turnIndex;
             const player = localState.players[pIdx];
             const card = player.hand[cardIndex];
-            
             if (!card) return;
 
-            // Removing premature broadcast, rely on updateState at end
+            if (card.requiresTarget && !localState.pendingTarget) {
+                 if (isHost && player.id === myPeerId) {
+                     showTargetSelection(cardIndex, card.id);
+                 } else if (localState.mode === 'single') {
+                     showTargetSelection(cardIndex, card.id);
+                 } else if (isHost) {
+                     // Tell the remote client to pick a target
+                     const conn = connections.find(c => c.peer === player.id);
+                     if(conn) conn.send({ type: 'SELECT_TARGET', cardIndex: cardIndex });
+                 }
+                 return;
+            }
 
+            if (['ATTACK', 'STEAL', 'HACK', 'SUDO'].includes(card.id)) {
+                triggerInterrupt(card, pIdx, cardIndex);
+                return; 
+            }
+            executeCardEffect(card, pIdx, cardIndex);
+        }
+
+        function executeCardEffect(card, pIdx, cardIndex, targetId = null) {
             let newState = JSON.parse(JSON.stringify(localState));
-            let currentPlayer = newState.players[pIdx];
+            let player = newState.players[pIdx];
             
-             if (card.id === 'FRAG_0' || card.id === 'FRAG_1') {
-                const matchIndex = currentPlayer.hand.findIndex((c, i) => c.id === card.id && i !== cardIndex);
+            if (card.id === 'FRAG_0' || card.id === 'FRAG_1') {
+                const matchIndex = player.hand.findIndex((c, i) => c.id === card.id && i !== cardIndex);
                 if (matchIndex === -1) { showToast("NEED PAIR!"); return; }
                 const idx1 = Math.max(cardIndex, matchIndex);
                 const idx2 = Math.min(cardIndex, matchIndex);
-                currentPlayer.hand.splice(idx1, 1);
-                currentPlayer.hand.splice(idx2, 1);
+                player.hand.splice(idx1, 1);
+                player.hand.splice(idx2, 1);
                 newState.discardPile.push(card, card);
                 executeSteal(newState, pIdx);
-                await updateState(newState);
-                return;
+            } else {
+                 player.hand.splice(cardIndex, 1);
+                 newState.discardPile.push(card);
             }
-            
-            currentPlayer.hand.splice(cardIndex, 1);
-            newState.discardPile.push(card);
 
             let turnEnded = false;
+
             if (card.id === 'ATTACK') {
                 newState.attacksBuffered += 2;
                 turnEnded = true;
-                newState = advanceTurn(newState, true); 
+                newState = advanceTurn(newState, true);
                 localState = newState;
             } else if (card.id === 'SKIP') {
-                currentPlayer.turnsToTake -= 1;
-                if (currentPlayer.turnsToTake <= 0) {
+                player.turnsToTake -= 1;
+                if (player.turnsToTake <= 0) {
                     turnEnded = true;
                     localState = advanceTurn(newState);
-                } else {
-                    localState = newState;
-                }
+                } else { localState = newState; }
             } else if (card.id === 'FUTURE') {
                  if (localState.mode === 'single') showFutureSight(newState.deck);
-                 else if (localState.mode === 'multi') {
+                 else if (isHost) {
                      if (player.id === myPeerId) showFutureSight(newState.deck);
                      else {
                          const target = connections.find(c => c.peer === player.id);
@@ -877,27 +1111,104 @@
             } else if (card.id === 'SHUFFLE') {
                 newState.deck = shuffle(newState.deck);
                 localState = newState;
+            } else if (card.id === 'CACHE') {
+                drawCardLogic(newState, pIdx);
+                drawCardLogic(newState, pIdx);
+                localState = newState;
+            } else if (card.id === 'BACKUP') {
+                 if (newState.deck.length > 0) {
+                     const bottomCard = newState.deck.pop(); 
+                     player.hand.push(bottomCard);
+                 }
+                 localState = newState;
             } else if (card.id === 'STEAL') {
                 executeSteal(newState, pIdx);
                 localState = newState;
-            } else {
+            } else if (card.id === 'SUDO' && targetId) {
+                const targetIdx = newState.players.findIndex(p => p.id === targetId);
+                if (targetIdx > -1) {
+                    drawCardLogic(newState, targetIdx);
+                    drawCardLogic(newState, targetIdx);
+                }
+                localState = newState;
+            } else if (card.id === 'HACK' && targetId) {
+                if (localState.mode === 'single') showHackModal(targetId, newState);
+                else if (isHost) {
+                    if (player.id === myPeerId) showHackModal(targetId, newState);
+                    else {
+                        const tConn = connections.find(c => c.peer === player.id);
+                        const victim = newState.players.find(p => p.id === targetId);
+                        if (tConn && victim) tConn.send({ type: 'HACK_DATA', hand: victim.hand, victimId: targetId });
+                    }
+                }
+                localState = newState;
+            } else if (card.id === 'FRAG_0' || card.id === 'FRAG_1') {
                 localState = newState;
             }
 
-            await updateState(newState);
+            if(isHost && localState.mode === 'multi') broadcastState();
+            if(localState.mode === 'single') { renderGame(); checkBotTurn(); }
         }
 
-        window.playerDrawCard = async (isNetworkRequest = false) => {
-             if (!isHost && localState.mode === 'multi') {
-                hostConn.send({ type: 'DRAW_CARD' });
-                return;
+        function triggerInterrupt(card, pIdx, cardIndex, targetId) {
+            localState.interruptWindow = { card: card, source: localState.players[pIdx].id, target: targetId, expiry: Date.now() + 3000, originalCardIndex: cardIndex };
+            if (isHost) broadcastState(); else renderGame();
+            
+            // Bot Denial Logic (Single Player)
+            if (localState.mode === 'single') {
+                 const potentialDeniers = localState.players.filter(p => p.isBot && p.id !== localState.players[pIdx].id && !p.isDead && p.hand.some(c => c.id === 'DENIED'));
+                 if (potentialDeniers.length > 0) {
+                     // 40% chance a bot intervenes
+                     if (Math.random() > 0.6) {
+                         const denier = potentialDeniers[Math.floor(Math.random() * potentialDeniers.length)];
+                         setTimeout(() => {
+                             if (localState.interruptWindow) handleDenied(denier.id);
+                         }, 1000 + Math.random() * 1000);
+                     }
+                 }
             }
-            
-            const player = localState.players[localState.turnIndex];
-            
-            const isMe = localState.mode === 'single' ? !player.isBot : player.id === myPeerId;
-            if (!isNetworkRequest && (!isMe || localState.status !== 'PLAYING')) return;
 
+            setTimeout(() => {
+                if (localState.interruptWindow) {
+                    const c = localState.interruptWindow.card;
+                    const cIdx = localState.interruptWindow.originalCardIndex;
+                    const tId = localState.interruptWindow.target;
+                    localState.interruptWindow = null; 
+                    executeCardEffect(c, pIdx, cIdx, tId);
+                }
+            }, 3000);
+        }
+
+        window.playDeniedCard = () => {
+            const me = localState.players.find(p => p.id === myPeerId);
+            const denIdx = me.hand.findIndex(c => c.id === 'DENIED');
+            if (denIdx === -1) return;
+            if (localState.mode === 'multi' && !isHost) hostConn.send({ type: 'PLAY_DENIED' });
+            else handleDenied(myPeerId);
+        }
+
+        function handleDenied(playerWhoDenied) {
+            if (!localState.interruptWindow) return;
+            const denier = localState.players.find(p => p.id === playerWhoDenied);
+            const denIdx = denier.hand.findIndex(c => c.id === 'DENIED');
+            if (denIdx > -1) { denier.hand.splice(denIdx, 1); localState.discardPile.push(CARD_TYPES.DENIED); }
+            const aggressor = localState.players.find(p => p.id === localState.interruptWindow.source);
+            const aggCardIdx = localState.interruptWindow.originalCardIndex;
+            const wastedCard = aggressor.hand.splice(aggCardIdx, 1)[0];
+            localState.discardPile.push(wastedCard);
+            localState.interruptWindow = null;
+            showToast("DENIED!");
+            if (isHost) broadcastState(); else renderGame();
+
+            // Restart bot turn if single player
+            if (localState.mode === 'single') checkBotTurn(); 
+        }
+
+        window.playerDrawCard = async (force = false) => {
+             if (!isHost && localState.mode === 'multi' && !force) { hostConn.send({ type: 'DRAW_CARD' }); return; }
+             const player = localState.players[localState.turnIndex];
+             const isMe = localState.mode === 'single' ? !player.isBot : player.id === myPeerId;
+             if (!force && (!isMe || localState.status !== 'PLAYING')) return;
              if (localState.deck.length === 0) {
                 if (localState.discardPile.length > 0) {
                     localState.deck = shuffle([...localState.discardPile]);
@@ -905,9 +1216,138 @@
                     showToast("RESHUFFLED");
                 } else return;
             }
-
             await handleDraw(localState.turnIndex);
         };
+
+        async function handleDraw(playerIdx) {
+            let newState = JSON.parse(JSON.stringify(localState));
+            let player = newState.players[playerIdx];
+            const card = newState.deck.shift();
+            if (!card) return;
+
+            if (card.id === 'CRASH') {
+                newState.activeFlashCard = { id: 'CRASH', drawer: player.name };
+                if (localState.mode === 'multi' && isHost) { localState = newState; broadcastState(); } 
+                else if (localState.mode === 'single') await updateState(newState);
+
+                setTimeout(async () => {
+                    let postRevealState = JSON.parse(JSON.stringify(localState));
+                    let p = postRevealState.players[playerIdx];
+                    postRevealState.activeFlashCard = null; 
+                    const defuseIdx = p.hand.findIndex(c => c.id === 'PATCH');
+                    if (defuseIdx > -1) {
+                        p.hand.splice(defuseIdx, 1);
+                        postRevealState.discardPile.push(CARD_TYPES.PATCH);
+                        postRevealState.deck.splice(Math.floor(Math.random() * (postRevealState.deck.length + 1)), 0, CARD_TYPES.CRASH);
+                        showToast(`${p.name} DEFUSED!`); 
+                        p.turnsToTake -= 1;
+                    } else {
+                        p.isDead = true; p.hand = [];
+                        const survivors = postRevealState.players.filter(x => !x.isDead);
+                        if (survivors.length === 1) {
+                            postRevealState.status = 'GAME_OVER';
+                            postRevealState.winner = survivors[0].name;
+                            setTimeout(() => endGame(survivors[0].name), 500);
+                        }
+                        p.turnsToTake = 0;
+                    }
+                    if (p.turnsToTake <= 0 && !p.isDead) postRevealState = advanceTurn(postRevealState);
+                    if (p.isDead && postRevealState.status !== 'GAME_OVER') postRevealState = advanceTurn(postRevealState);
+                    if (localState.mode === 'multi' && isHost) { localState = postRevealState; broadcastState(); } 
+                    else if (localState.mode === 'single') await updateState(postRevealState);
+                }, 3000);
+                return; 
+            } else {
+                player.hand.push(card);
+                player.turnsToTake -= 1;
+            }
+            if (player.turnsToTake <= 0 && !player.isDead) newState = advanceTurn(newState);
+            if (player.isDead && newState.status !== 'GAME_OVER') newState = advanceTurn(newState);
+            await updateState(newState);
+        }
+
+        function drawCardLogic(state, pIdx) {
+            if (state.deck.length === 0) {
+                 if (state.discardPile.length > 0) { state.deck = shuffle([...state.discardPile]); state.discardPile = []; } else return;
+            }
+            const card = state.deck.shift();
+            if (card.id === 'CRASH') {
+                 const p = state.players[pIdx];
+                 const defuseIdx = p.hand.findIndex(c => c.id === 'PATCH');
+                 if (defuseIdx > -1) {
+                     p.hand.splice(defuseIdx, 1);
+                     state.discardPile.push(CARD_TYPES.PATCH);
+                     state.deck.splice(Math.floor(Math.random() * state.deck.length), 0, CARD_TYPES.CRASH);
+                 } else { p.isDead = true; p.hand = []; }
+            } else { state.players[pIdx].hand.push(card); }
+        }
+
+        // --- UTILS & UI ---
+        window.scrollHand = (direction) => {
+             const hand = document.getElementById('player-hand');
+             hand.scrollBy({ left: direction * 200, behavior: 'smooth' });
+        }
+        
+        function showTargetSelection(cardIndex, type) {
+            const modal = document.getElementById('target-modal');
+            const container = document.getElementById('target-options');
+            container.innerHTML = '';
+            localState.players.forEach(p => {
+                if (p.id !== myPeerId && !p.isDead) {
+                    const btn = document.createElement('button');
+                    btn.className = "bg-slate-700 text-white p-3 rounded pixel-font hover:bg-slate-600";
+                    btn.innerHTML = getNameHTML(p.name, p.status);
+                    btn.onclick = () => {
+                        modal.classList.add('hidden');
+                        if (localState.mode === 'multi' && !isHost) hostConn.send({ type: 'PLAY_TARGETED', cardIndex, targetId: p.id });
+                        else executeCardEffect(localState.players[localState.turnIndex].hand[cardIndex], localState.turnIndex, cardIndex, p.id);
+                    };
+                    container.appendChild(btn);
+                }
+            });
+            modal.classList.remove('hidden');
+        }
+        window.closeTargetModal = () => document.getElementById('target-modal').classList.add('hidden');
+
+        function showHackModal(targetId, state = localState) {
+            const modal = document.getElementById('hack-modal');
+            const container = document.getElementById('hack-cards');
+            container.innerHTML = '';
+            const victim = state.players.find(p => p.id === targetId);
+            if(victim && victim.hand.length > 0) {
+                 victim.hand.forEach((card, idx) => {
+                     const el = document.createElement('div');
+                     el.innerHTML = `<i class="fas ${card.icon} text-2xl text-white"></i>`;
+                     el.className = `w-16 h-24 ${card.color} border border-white rounded cursor-pointer hover:scale-110 flex items-center justify-center`;
+                     el.onclick = () => {
+                         if (localState.mode === 'multi' && !isHost) {
+                             hostConn.send({ type: 'HACK_COMPLETE', targetId, cardIdx: idx });
+                             modal.classList.add('hidden');
+                         } else {
+                             executeHackSteal(targetId, idx);
+                             modal.classList.add('hidden');
+                         }
+                     }
+                     container.appendChild(el);
+                 });
+                 modal.classList.remove('hidden');
+            } else showToast("TARGET HAS NO CARDS");
+        }
+        window.closeHackModal = () => document.getElementById('hack-modal').classList.add('hidden');
+        
+        function executeHackSteal(targetId, cardIdx) {
+            let newState = JSON.parse(JSON.stringify(localState));
+            const thief = newState.players[newState.turnIndex];
+            const victim = newState.players.find(p => p.id === targetId);
+            if (victim && victim.hand[cardIdx]) {
+                const stolen = victim.hand.splice(cardIdx, 1)[0];
+                thief.hand.push(stolen);
+                localState = newState;
+                if(isHost && localState.mode === 'multi') broadcastState();
+                else if(localState.mode === 'single') renderGame();
+                showToast("SYSTEM BREACH SUCCESSFUL");
+            }
+        }
 
         function executeSteal(state, thiefIdx) {
              const thief = state.players[thiefIdx];
@@ -920,42 +1360,82 @@
                 showToast(`STOLEN FROM ${victim.name}`);
             }
         }
+
+        function checkBotTurn() {
+            if (localState.status !== 'PLAYING') return;
+            const player = localState.players[localState.turnIndex];
+            if (!player || !player.isBot || player.isDead) return;
+            if (localState.activeFlashCard) return; 
+            if (localState.mode === 'multi') if (!isHost) return;
+            setTimeout(() => { botAction(player); }, 1500);
+        }
+
+        async function botAction(player) {
+            if (localState.players[localState.turnIndex].id !== player.id) return;
+            if (localState.activeFlashCard) return;
+            if (localState.deck.length === 0 && localState.discardPile.length === 0 && !player.hand.some(c => c.id !== 'CRASH')) return;
+            let actionCardIdx = -1;
+            const attacks = player.hand.map((c, i) => c.id === 'ATTACK' ? i : -1).filter(i => i !== -1);
+            if (attacks.length > 0 && Math.random() > 0.6) actionCardIdx = attacks[0];
+            if (actionCardIdx === -1) {
+                 const skips = player.hand.map((c, i) => c.id === 'SKIP' ? i : -1).filter(i => i !== -1);
+                 if (skips.length > 0 && Math.random() > 0.5) actionCardIdx = skips[0];
+            }
+            if (actionCardIdx !== -1) window.playCard(actionCardIdx); 
+            else handleDraw(localState.turnIndex);
+        }
         
+        function advanceTurn(state, isAttack = false) {
+            if (typeof state === 'boolean') { isAttack = state; state = JSON.parse(JSON.stringify(localState)); }
+            if (!state) state = JSON.parse(JSON.stringify(localState));
+            let nextIndex = (state.turnIndex + 1) % state.players.length;
+            while(state.players[nextIndex].isDead) { nextIndex = (nextIndex + 1) % state.players.length; }
+            state.turnIndex = nextIndex;
+            state.players[nextIndex].turnsToTake = isAttack ? 2 : 1;
+            return state;
+        }
+
+        function endGame(winnerName) {
+            let xpEarned = 0;
+            if (localState.mode === 'single') { if (!userData.isGuest) { xpEarned += 10; addXp(xpEarned); } }
+            else {
+                const me = localState.players.find(p => p.id === myPeerId);
+                if (me && !userData.isGuest) { xpEarned += 10; if (!me.isDead) xpEarned += 50; addXp(xpEarned); }
+            }
+            document.getElementById('xp-gain-msg').innerText = userData.isGuest ? "GUEST MODE (NO XP SAVED)" : `+${xpEarned} XP GAINED`;
+            document.getElementById('winner-text').innerText = `${winnerName} WINS!`;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
         async function updateState(newState) {
             localState = newState;
-            // Update local state and trigger side effects for single player
-            if (localState.mode === 'single') {
-                renderGame();
-                checkBotTurn();
-            } else if (localState.mode === 'multi' && isHost) {
-                broadcastState();
-            }
+            if (localState.mode === 'single') { renderGame(); checkBotTurn(); }
+            else if (localState.mode === 'multi' && isHost) broadcastState();
         }
 
         function renderLobby() {
             document.getElementById('player-count-display').innerText = `${localState.players.length}/${localState.maxPlayers}`;
             const list = document.getElementById('player-list');
-            list.innerHTML = localState.players.map(p => `<li><i class="fas fa-robot mr-2"></i>${p.name} ${p.id === myPeerId ? '(YOU)' : ''}</li>`).join('');
-            
-            if (isHost) {
-                document.getElementById('start-mp-btn').classList.remove('hidden');
-                document.getElementById('waiting-msg').classList.add('hidden');
-            } else {
-                document.getElementById('start-mp-btn').classList.add('hidden');
-                document.getElementById('waiting-msg').classList.remove('hidden');
-            }
+            list.innerHTML = localState.players.map(p => `<li><i class="fas fa-robot mr-2"></i>${getNameHTML(p.name, p.status)} ${p.id === myPeerId ? '(YOU)' : ''}</li>`).join('');
+            if (isHost) { document.getElementById('start-mp-btn').classList.remove('hidden'); document.getElementById('waiting-msg').classList.add('hidden'); }
+            else { document.getElementById('start-mp-btn').classList.add('hidden'); document.getElementById('waiting-msg').classList.remove('hidden'); }
         }
 
         function renderGame() {
             const currentPlayer = localState.players[localState.turnIndex];
             const isMe = localState.mode === 'single' ? !currentPlayer.isBot : currentPlayer.id === myPeerId;
-            
             const overlay = document.getElementById('reveal-overlay');
             if (localState.activeFlashCard) {
                 document.getElementById('reveal-msg').innerText = `${localState.activeFlashCard.drawer} PULLED CRASH!`;
                 overlay.classList.remove('hidden');
+            } else overlay.classList.add('hidden');
+            
+            // Interrupt & Denied logic (Updated)
+            const interrupt = document.getElementById('local-interrupt-area');
+            if (localState.interruptWindow) {
+                interrupt.classList.remove('hidden');
             } else {
-                overlay.classList.add('hidden');
+                interrupt.classList.add('hidden');
             }
 
             if (localState.status === 'GAME_OVER') {
@@ -966,28 +1446,35 @@
 
             document.getElementById('status-msg').innerText = isMe ? `YOUR TURN (${currentPlayer.turnsToTake})` : `WAITING FOR ${currentPlayer.name}`;
             document.getElementById('deck-count').innerText = localState.deck.length;
-            
             const handEl = document.getElementById('player-hand');
             handEl.innerHTML = '';
-            
             let myPlayer = localState.players.find(p => p.id === myPeerId);
-            if (myPlayer && !myPlayer.isDead) {
-                document.getElementById('player-emote-container').innerHTML = myPlayer.emote ? `<div class="bg-white text-black p-2 rounded pixel-font text-xl animate-bounce">${myPlayer.emote}</div>` : '';
-                document.getElementById('player-name').innerText = myPlayer.name;
+            
+            // Chat Input Visibility
+            if (localState.chatEnabled && !myPlayer?.muted) {
+                 document.getElementById('chat-input-row').classList.remove('hidden');
+                 document.getElementById('chat-input-row').classList.add('flex');
+            } else {
+                 document.getElementById('chat-input-row').classList.add('hidden');
+                 document.getElementById('chat-input-row').classList.remove('flex');
+            }
 
+            if (myPlayer && !myPlayer.isDead) {
+                document.getElementById('player-emote-container').innerHTML = myPlayer.emote ? `<div class="bg-white text-black p-2 rounded pixel-font text-xl animate-bounce break-words max-w-[150px] text-xs">${myPlayer.emote}</div>` : '';
+                document.getElementById('player-name').innerHTML = getNameHTML(myPlayer.name, myPlayer.status);
                 myPlayer.hand.forEach((card, idx) => {
                     const el = document.createElement('div');
                     el.className = `card w-20 h-32 md:w-24 md:h-36 rounded-lg border-2 border-black flex flex-col items-center justify-between p-2 cursor-pointer shadow-lg ${card.color} flex-shrink-0 relative overflow-hidden`;
-                    el.innerHTML = `
-                        <div class="absolute top-1 left-1 text-[8px] font-bold text-white opacity-50 pixel-font">${card.name}</div>
-                        <i class="fas ${card.icon} text-3xl md:text-4xl text-white drop-shadow-md my-auto"></i>
-                        <div class="text-[8px] md:text-[9px] text-center leading-tight text-white font-bold pixel-font px-1">${card.desc}</div>
-                    `;
-                    el.onclick = () => { if (isMe && !localState.activeFlashCard) window.playCard(idx); };
+                    el.innerHTML = renderCardHTML(card, true);
+                    el.onclick = () => { if (isMe && !localState.activeFlashCard && !localState.interruptWindow) window.playCard(idx); };
                     handEl.appendChild(el);
                 });
-            } else if (myPlayer && myPlayer.isDead) {
-                handEl.innerHTML = '<div class="text-red-500 pixel-font text-2xl">CRITICAL FAILURE (DEAD)</div>';
+            } else if (myPlayer && myPlayer.isDead) { handEl.innerHTML = '<div class="text-red-500 pixel-font text-2xl">CRITICAL FAILURE (DEAD)</div>'; }
+
+            // Scroll arrows
+            if (handEl.scrollWidth > handEl.clientWidth) {
+                document.getElementById('scroll-left').classList.remove('hidden');
+                document.getElementById('scroll-right').classList.remove('hidden');
             }
 
             const container = document.getElementById('opponents-container');
@@ -997,9 +1484,7 @@
                 const el = document.createElement('div');
                 const isTurn = localState.turnIndex === idx;
                 el.className = `flex flex-col items-center justify-start w-16 mb-2 transition duration-500 ${isTurn ? 'scale-110' : 'opacity-70'}`;
-                
-                let emoteHtml = p.emote ? `<div class="absolute -bottom-10 bg-white text-black p-1 rounded pixel-font text-xs z-50 animate-bounce">${p.emote}</div>` : '';
-
+                let emoteHtml = p.emote ? `<div class="absolute -bottom-10 bg-white text-black p-1 rounded pixel-font text-xs z-50 animate-bounce break-words max-w-[100px]">${p.emote}</div>` : '';
                 el.innerHTML = `
                     <div class="relative">
                         ${emoteHtml}
@@ -1008,76 +1493,14 @@
                         </div>
                         ${!p.isDead ? `<div class="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center border border-black">${p.hand.length}</div>` : ''}
                     </div>
-                    <span class="text-[10px] text-white pixel-font truncate w-full text-center ${isTurn ? 'text-green-400' : ''}">${p.name}</span>
+                    <div class="text-[10px] pixel-font truncate w-full text-center mt-1 ${isTurn ? 'scale-110' : ''}">${getNameHTML(p.name, p.status)}</div>
                 `;
                 container.appendChild(el);
             });
         }
-
-        function enterWaitingRoom() {
-            document.getElementById('lobby-controls').classList.add('hidden');
-            document.getElementById('waiting-room').classList.remove('hidden');
-            document.getElementById('waiting-msg').classList.remove('hidden');
-        }
-
-        window.backToMain = () => {
-            document.getElementById('lobby-menu').classList.add('hidden');
-            document.getElementById('game-over-modal').classList.add('hidden');
-            document.getElementById('main-menu').classList.remove('hidden');
-            if (peer) { peer.destroy(); peer = null; }
-            localState.status = 'LOBBY';
-            updateMenuUI();
-        }
-
-        window.toggleEmoteMenu = () => document.getElementById('emote-menu').classList.toggle('hidden');
-        window.sendEmote = (emoji) => {
-            document.getElementById('emote-menu').classList.add('hidden');
-            if(localState.mode === 'single') {
-                const me = localState.players[0];
-                me.emote = emoji;
-                renderGame();
-                setTimeout(() => { me.emote = null; renderGame(); }, 2000);
-            } else {
-                if(!isHost) hostConn.send({ type: 'EMOTE', emoji: emoji });
-                else {
-                    const me = localState.players.find(p => p.id === myPeerId);
-                    if(me) {
-                        me.emote = emoji;
-                        broadcastState();
-                        setTimeout(() => { me.emote = null; broadcastState(); }, 2000);
-                    }
-                }
-            }
-        }
-
-        function endGame(winnerName) {
-            let xpEarned = 0;
-            // In single player or multiplayer, calculate XP
-            if (localState.mode === 'single') {
-                if (!userData.isGuest) {
-                    xpEarned += 10;
-                    addXp(xpEarned); 
-                }
-            } else {
-                const me = localState.players.find(p => p.id === myPeerId);
-                if (me && !userData.isGuest) {
-                     xpEarned += 10; // Participation
-                     if (!me.isDead) xpEarned += 50; // Win bonus
-                     
-                     addXp(xpEarned);
-                }
-            }
-            document.getElementById('xp-gain-msg').innerText = userData.isGuest ? "GUEST MODE (NO XP SAVED)" : `+${xpEarned} XP GAINED`;
-            document.getElementById('winner-text').innerText = `${winnerName} WINS!`;
-            document.getElementById('game-over-modal').classList.remove('hidden');
-        }
         
         function renderCardHTML(card, showDetails) {
-            return `
-                <div class="absolute top-1 left-1 text-[8px] font-bold text-white opacity-50 pixel-font">${card.name}</div>
-                <i class="fas ${card.icon} text-3xl md:text-4xl text-white drop-shadow-md my-auto"></i>
-                <div class="text-[8px] md:text-[9px] text-center leading-tight text-white font-bold pixel-font px-1">${card.desc}</div>
-            `;
+            return `<div class="absolute top-1 left-1 text-[8px] font-bold text-white opacity-50 pixel-font">${card.name}</div><i class="fas ${card.icon} text-3xl md:text-4xl text-white drop-shadow-md my-auto"></i><div class="text-[8px] md:text-[9px] text-center leading-tight text-white font-bold pixel-font px-1">${card.desc}</div>`;
         }
         
         function showFutureSight(deck) {
@@ -1094,8 +1517,140 @@
             modal.classList.remove('hidden');
         }
 
-        window.closeFutureModal = () => {
-            document.getElementById('future-modal').classList.add('hidden');
+        window.closeFutureModal = () => document.getElementById('future-modal').classList.add('hidden');
+        window.hostForceSkip = async () => { if (!isHost) return; let newState = JSON.parse(JSON.stringify(localState)); newState = advanceTurn(newState); await updateState(newState); };
+        window.backToMain = () => { document.getElementById('lobby-menu').classList.add('hidden'); document.getElementById('game-over-modal').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); if (peer) { peer.destroy(); peer = null; } localState.status = 'LOBBY'; updateMenuUI(); };
+        function enterWaitingRoom(code) { document.getElementById('lobby-controls').classList.add('hidden'); document.getElementById('waiting-room').classList.remove('hidden'); document.getElementById('waiting-msg').classList.remove('hidden'); }
+        window.toggleEmoteMenu = () => document.getElementById('emote-menu').classList.toggle('hidden');
+        window.toggleReportMenu = () => {
+            const menu = document.getElementById('report-menu');
+            const select = document.getElementById('report-target');
+            if (menu.classList.contains('hidden')) {
+                select.innerHTML = '';
+                localState.players.forEach(p => {
+                    if (p.id !== myPeerId) {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.innerText = p.name;
+                        select.appendChild(opt);
+                    }
+                });
+                if (localState.players.length > 0 && localState.players[0].id === myPeerId) {
+                    document.getElementById('admin-rename-btn').classList.remove('hidden');
+                    document.getElementById('admin-mute-btn').classList.remove('hidden');
+                } else {
+                    document.getElementById('admin-rename-btn').classList.add('hidden');
+                    document.getElementById('admin-mute-btn').classList.add('hidden');
+                }
+                menu.classList.remove('hidden');
+                menu.classList.add('flex');
+            } else {
+                menu.classList.add('hidden');
+                menu.classList.remove('flex');
+            }
+        }
+        window.sendEmote = (emoji) => {
+            document.getElementById('emote-menu').classList.add('hidden');
+            if(localState.mode === 'single') { const me = localState.players[0]; me.emote = emoji; renderGame(); setTimeout(() => { me.emote = null; renderGame(); }, 2000); } 
+            else { if(!isHost) hostConn.send({ type: 'EMOTE', emoji: emoji }); else { const me = localState.players.find(p => p.id === myPeerId); if(me) { me.emote = emoji; broadcastState(); setTimeout(() => { me.emote = null; broadcastState(); }, 2000); } } }
+        }
+
+        // Restored missing functions
+        window.submitReport = async (type) => {
+            const targetId = document.getElementById('report-target').value;
+            if (!targetId) return;
+            
+            let newState = JSON.parse(JSON.stringify(localState));
+            
+            if (type === 'KICK') {
+                if (!newState.kickVotes) newState.kickVotes = {};
+                if (!newState.kickVotes[targetId]) newState.kickVotes[targetId] = [];
+                
+                if (!newState.kickVotes[targetId].includes(myPeerId)) {
+                    newState.kickVotes[targetId].push(myPeerId);
+                    showToast(`VOTE CAST (${newState.kickVotes[targetId].length}/3)`);
+                } else {
+                    showToast("ALREADY VOTED");
+                    return;
+                }
+
+                if (newState.kickVotes[targetId].length >= 3) {
+                    newState.players = newState.players.filter(p => p.id !== targetId);
+                    showToast("PLAYER EJECTED");
+                }
+            } else if (type === 'RENAME') {
+                const pIndex = newState.players.findIndex(p => p.id === targetId);
+                if (pIndex > -1) {
+                    newState.players[pIndex].name = "USER_" + Math.floor(Math.random() * 1000);
+                    showToast("NAME SANITIZED");
+                }
+            } else if (type === 'MUTE') {
+                 const pIndex = newState.players.findIndex(p => p.id === targetId);
+                 if (pIndex > -1) {
+                     newState.players[pIndex].muted = !newState.players[pIndex].muted;
+                     showToast(newState.players[pIndex].muted ? "PLAYER MUTED" : "PLAYER UNMUTED");
+                 }
+            }
+            
+            await updateState(newState);
+            document.getElementById('report-menu').classList.add('hidden');
+        }
+
+        window.lobbyReport = async (playerId) => {
+            let newState = JSON.parse(JSON.stringify(localState));
+            const p = newState.players.find(p => p.id === playerId);
+            if (p) {
+                p.flagged = true;
+                await updateState(newState);
+                alert("Player Flagged to Host");
+            }
+        }
+        
+        // CHAT FUNCTIONS
+        window.handleChatKey = (e) => {
+            if(e.key === 'Enter') sendChatMessage();
+        }
+
+        window.sendChatMessage = () => {
+             const input = document.getElementById('chat-input-box');
+             const msg = input.value.substring(0, 100).trim();
+             if(!msg) return;
+             
+             if(!hasAgreedToChat) {
+                 document.getElementById('chat-agree-modal').classList.remove('hidden');
+                 document.getElementById('chat-agree-modal').classList.add('flex');
+                 return;
+             }
+             
+             // Send
+             if(localState.mode === 'single') {
+                 const me = localState.players[0];
+                 me.emote = msg;
+                 renderGame();
+                 setTimeout(() => { me.emote = null; renderGame(); }, 4000);
+             } else {
+                 if(!isHost) hostConn.send({ type: 'CHAT', msg: msg });
+                 else {
+                     const me = localState.players.find(p => p.id === myPeerId);
+                     me.emote = msg;
+                     broadcastState();
+                     setTimeout(() => { me.emote = null; broadcastState(); }, 4000);
+                 }
+             }
+             input.value = '';
+             document.getElementById('emote-menu').classList.add('hidden');
+        }
+        
+        window.acceptChat = () => {
+             hasAgreedToChat = true;
+             document.getElementById('chat-agree-modal').classList.add('hidden');
+             document.getElementById('chat-agree-modal').classList.remove('flex');
+             sendChatMessage(); // Retry
+        }
+        
+        window.closeChatAgree = () => {
+             document.getElementById('chat-agree-modal').classList.add('hidden');
+             document.getElementById('chat-agree-modal').classList.remove('flex');
         }
     </script>
 </body>
